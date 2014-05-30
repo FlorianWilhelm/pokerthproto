@@ -35,7 +35,7 @@ JUNIT_XML = False
 
 # Add here all kinds of additional classifiers as defined under
 # https://pypi.python.org/pypi?%3Aaction=list_classifiers
-CLASSIFIERS = ['Development Status :: 4 - Beta',
+CLASSIFIERS = ['Development Status :: 2 - Pre-Alpha',
                'Programming Language :: Python']
 
 # Add here console scripts like ['hello_world = pokerthproto.module:function']
@@ -125,23 +125,6 @@ def sphinx_builder():
     return BuildSphinxDocs
 
 
-# Taken from six, Copyright (c) 2010-2014 Benjamin Peterson, MIT License
-def add_metaclass(metaclass):
-    """Class decorator for creating a class with a metaclass."""
-    def wrapper(cls):
-        orig_vars = cls.__dict__.copy()
-        orig_vars.pop('__dict__', None)
-        orig_vars.pop('__weakref__', None)
-        slots = orig_vars.get('__slots__')
-        if slots is not None:
-            if isinstance(slots, str):
-                slots = [slots]
-            for slots_var in slots:
-                orig_vars.pop(slots_var)
-        return metaclass(cls.__name__, cls.__bases__, orig_vars)
-    return wrapper
-
-
 class ObjKeeper(type):
     instances = {}
 
@@ -155,6 +138,7 @@ class ObjKeeper(type):
 
 
 def capture_objs(cls):
+    from six import add_metaclass
     module = inspect.getmodule(cls)
     name = cls.__name__
     keeper_class = add_metaclass(ObjKeeper)(cls)
@@ -221,6 +205,7 @@ def setup_package():
           test_suite='tests',
           packages=setuptools.find_packages(exclude=['tests', 'tests.*']),
           install_requires=install_reqs,
+          setup_requires=['six'],
           cmdclass=cmdclass,
           tests_require=['pytest-cov', 'pytest'],
           command_options=command_options,
