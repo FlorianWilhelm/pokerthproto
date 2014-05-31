@@ -3,11 +3,12 @@
 from __future__ import print_function, absolute_import, division
 from twisted.application import internet, service
 
-from pokerthproto.proxy import ProxyProtocolFactory
+from pokerthproto.protocol import ClientProtocolFactory
 
 __author__ = 'Florian Wilhelm'
 __copyright__ = 'Florian Wilhelm'
 
-application = service.Application('PokerTH Proxy Server')
-service = internet.TCPServer(1234, ProxyProtocolFactory())
+application = service.Application('PokerTH Client')
+client_factory = ClientProtocolFactory('PyClient')
+service = internet.TCPClient('localhost', 7234, client_factory)
 service.setServiceParent(application)

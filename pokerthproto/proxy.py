@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from __future__ import print_function, absolute_import
+from __future__ import print_function, absolute_import, division
 
 from twisted.internet import reactor
 from twisted.python import log
@@ -17,7 +17,7 @@ class ProxyProtocol(Protocol):
 
     def connectionMade(self):
         self.factory.numConnections += 1
-        log.msg("Server connection made!!")
+        log.msg("Client connection established")
         self.point = TCP4ClientEndpoint(reactor, "localhost", 7234)
         client_factory = ClientProtocolFactory(self.sendToClient)
         self.client_proto = self.point.connect(client_factory)
@@ -31,12 +31,13 @@ class ProxyProtocol(Protocol):
 
     def dataReceived(self, data):
         msg = pokerth_pb2.PokerTHMessage()
-        msg.ParseFromString(data)
+        msg.ParseFromString(data[4:])
         log.msg("From client: {}".format(msg))
+        log.msg(data.encode('string-escape'))
         self.client_proto.transport.write(data)
 
     def connectionLost(self, reason):
-        pass
+        log.msg('Client connection lost due to: {}'.format(reason))
 
 
 class ProxyProtocolFactory(Factory):
@@ -46,16 +47,16 @@ class ProxyProtocolFactory(Factory):
 
 class ClientProtocol(Protocol):
     def connectionMade(self):
-        log.msg("Client connection made!!")
+        log.msg("Connection to server established")
 
     def dataReceived(self, data):
         msg = pokerth_pb2.PokerTHMessage()
-        msg.ParseFromString(data)
+        msg.ParseFromString(data[4:])
         log.msg("From server: {}".format(msg))
         self.factory.sendToClient(data)
 
     def connectionLost(self, reason):
-        pass
+        log.msg('Server connection lost due to: {}'.format(reason))
 
 
 class ClientProtocolFactory(Factory):
