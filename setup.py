@@ -23,9 +23,9 @@ __location__ = os.path.join(os.getcwd(), os.path.dirname(
 
 # Change these settings according to your needs
 MAIN_PACKAGE = "pokerthproto"
-DESCRIPTION = "None"
+DESCRIPTION = "Python client library for PokerTH"
 LICENSE = "new BSD"
-URL = "None"
+URL = "https://github.com/FlorianWilhelm/pokerthproto"
 AUTHOR = "Florian Wilhelm"
 EMAIL = "Florian.Wilhelm@gmail.com"
 
@@ -36,7 +36,8 @@ JUNIT_XML = False
 # Add here all kinds of additional classifiers as defined under
 # https://pypi.python.org/pypi?%3Aaction=list_classifiers
 CLASSIFIERS = ['Development Status :: 2 - Pre-Alpha',
-               'Programming Language :: Python']
+               'Programming Language :: Python',
+               'Programming Language :: Python :: 2.7']
 
 # Add here console scripts like ['hello_world = pokerthproto.module:function']
 CONSOLE_SCRIPTS = []
@@ -207,7 +208,7 @@ def setup_package():
           install_requires=install_reqs,
           setup_requires=['six'],
           cmdclass=cmdclass,
-          tests_require=['pytest-cov', 'pytest'],
+          tests_require=['pytest-cov', 'pytest-twisted', 'pytest'],
           command_options=command_options,
           entry_points={'console_scripts': CONSOLE_SCRIPTS})
 

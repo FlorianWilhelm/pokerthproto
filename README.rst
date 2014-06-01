@@ -11,18 +11,23 @@ rather incomplete and does not yet fulfill its purpose. The only functionality
 that works right now is to provide a simple proxy in order to inspect the
 messages between a PokerTH client and server.
 
-Usage
-=====
+Examples
+========
 
-Start the PokerTH server locally::
+PokerTHProto comes with some examples using the `Twisted application framework
+<http://twistedmatrix.com/documents/current/core/howto/application.html>`__
+which all reside in the ``examples`` folder.
 
-    pokerth_server
+Proxy server
+------------
 
-and then start the twisted application in the ``examples`` folder::
+A simple proxy server for PokerTH to inspect the data exchange between client
+and server. To use it, run the PokerTH server locally (``pokerth_server``)
+and then start the twisted application::
 
     twisted -y pokerth_proxy.tac -n
 
-Now start the graphical pokerth client and in *Settings* under the tab
+Now run the graphical pokerth client and in *Settings* under the tab
 *Internet Game* check *Manual Server Configuration*, choose ``localhost`` as
 *Server Address* and ``1234`` as *Server Port* and confirm with *OK*.
 Click now *Internet Game* to connect to your local *PokerTH* server and watch
