@@ -7,7 +7,6 @@ import sys
 from twisted.internet.endpoints import TCP4ClientEndpoint, connectProtocol
 from twisted.internet import reactor
 from twisted.python import log
-from IPython import embed
 
 from .fixtures import pokerth_server
 

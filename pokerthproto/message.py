@@ -7,8 +7,6 @@ from .pokerth_pb2 import PokerTHMessage
 __author__ = 'Florian Wilhelm'
 __copyright__ = 'Florian Wilhelm'
 
-from IPython import embed
-
 
 def makeSizeBytes(n):
     """
