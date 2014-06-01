@@ -2,7 +2,9 @@
 [run]
 branch = True
 source = pokerthproto
-omit = */_version.py
+omit = 
+	*/_version.py
+	*/pokerth_pb2.py
 
 [report]
 # Regexes for lines to exclude from consideration

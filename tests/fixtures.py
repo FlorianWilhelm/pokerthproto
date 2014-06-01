@@ -40,7 +40,7 @@ def tmpdir():
 
 @pytest.yield_fixture()
 def pokerth_server():
-    with tempfile.NamedTemporaryFile() as fh:
+    with tempfile.NamedTemporaryFile(dir='./') as fh:
         check_call('pokerth_server -p {}'.format(fh.name), shell=True)
         yield
         check_call('kill {}'.format(fh.read()), shell=True)
