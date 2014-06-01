@@ -2,6 +2,11 @@
 PokerTHProto
 ============
 
+.. image:: https://travis-ci.org/blue-yonder/pyscaffold.svg?branch=master
+    :target: https://travis-ci.org/FlorianWilhelm/pokerthproto
+.. image:: https://coveralls.io/repos/blue-yonder/pyscaffold/badge.png
+    :target: https://coveralls.io/r/FlorianWilhelm/pokerthproto
+
 The goal of this project is to provide a client interface to a
 `PokerTH <http://pokerth.net/>`__ server. This interface could then be used
 to write alternative poker clients in Python or even poker bots.
