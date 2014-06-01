@@ -53,7 +53,8 @@ class PyTest(TestCommand):
     user_options = [("cov=", None, "Run coverage"),
                     ("cov-xml=", None, "Generate junit xml report"),
                     ("cov-html=", None, "Generate junit html report"),
-                    ("junitxml=", None, "Generate xml of test results")]
+                    ("junitxml=", None, "Generate xml of test results"),
+                    ("twisted=", None, "Run with twisted")]
 
     def initialize_options(self):
         TestCommand.initialize_options(self)
@@ -61,6 +62,7 @@ class PyTest(TestCommand):
         self.cov_xml = False
         self.cov_html = False
         self.junitxml = None
+        self.twisted = False
 
     def finalize_options(self):
         TestCommand.finalize_options(self)
@@ -72,6 +74,8 @@ class PyTest(TestCommand):
                 self.cov.extend(["--cov-report", "html"])
         if self.junitxml is not None:
             self.junitxml = ["--junitxml", self.junitxml]
+        if self.twisted:
+            self.twisted = ["--twisted"]
 
     def run_tests(self):
         try:
@@ -85,6 +89,9 @@ class PyTest(TestCommand):
             params["plugins"] = ["cov"]
         if self.junitxml:
             params["args"] += self.junitxml
+        if self.twisted:
+            params["plugins"] = ["twisted"]
+            params["args"] += self.twisted
         errno = pytest.main(**params)
         sys.exit(errno)
 
@@ -186,7 +193,8 @@ def setup_package():
                     'source_dir': ('setup.py', docs_path),
                     'builder': ('setup.py', 'doctest')},
         'test': {'test_suite': ('setup.py', 'tests'),
-                 'cov': ('setup.py', 'pokerthproto')}}
+                 'cov': ('setup.py', 'pokerthproto'),
+                 'twisted': ('setup.py', True)}}
     if JUNIT_XML:
         command_options['test']['junitxml'] = ('setup.py', 'junit.xml')
     if COVERAGE_XML:

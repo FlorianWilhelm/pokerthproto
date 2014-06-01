@@ -2,19 +2,30 @@
 
 from __future__ import print_function, absolute_import
 
-from twisted.trial import unittest
-from twisted.test import proto_helpers
+import sys
 
-from pokerthproto import pokerth_pb2
+from twisted.internet.endpoints import TCP4ClientEndpoint, connectProtocol
+from twisted.internet import reactor
+from twisted.python import log
 from IPython import embed
+
+from .fixtures import pokerth_server
+
+from pokerthproto import protocol
 
 __author__ = 'Florian Wilhelm'
 __copyright__ = 'Florian Wilhelm'
 
 
-def test_pokerth_pb2():
-    with open("dump_login") as fh:
-        content = fh.read()
-    msg = pokerth_pb2.PokerTHMessage()
-    msg.ParseFromString(content)
-    embed()
+def test_ClientProtocol(pokerth_server):
+    log.startLogging(sys.stdout)
+    endpoint = TCP4ClientEndpoint(reactor, 'localhost', 7234)
+    factory = protocol.ClientProtocolFactory('PyClient')
+    proto = factory.buildProtocol('localhost')
+    d = connectProtocol(endpoint, proto)
+    return d
+
+
+log.startLogging(sys.stdout)
+endpoint = TCP4ClientEndpoint(reactor, 'localhost', 7234)
+endpoint.connect(protocol.ClientProtocolFactory('PyClient'))

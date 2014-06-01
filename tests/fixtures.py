@@ -2,6 +2,11 @@
 
 from __future__ import print_function, absolute_import, division
 
+import os
+import tempfile
+from subprocess import check_call
+from shutil import rmtree
+
 import pytest
 
 from pokerthproto.pokerth_pb2 import PokerTHMessage
@@ -21,3 +26,21 @@ def initMsg():
     msg = PokerTHMessage()
     msg.ParseFromString(initMsgData()[4:])
     return msg
+
+
+@pytest.yield_fixture()
+def tmpdir():
+    old_path = os.getcwd()
+    newpath = tempfile.mkdtemp()
+    os.chdir(newpath)
+    yield
+    os.chdir(old_path)
+    rmtree(newpath)
+
+
+@pytest.yield_fixture()
+def pokerth_server():
+    with tempfile.NamedTemporaryFile() as fh:
+        check_call('pokerth_server -p {}'.format(fh.name), shell=True)
+        yield
+        check_call('kill {}'.format(fh.read()), shell=True)
