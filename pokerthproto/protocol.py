@@ -9,17 +9,15 @@ from twisted.internet import reactor
 from twisted.python import log
 from twisted.internet.protocol import Protocol, ClientFactory
 
-from .pokerth_pb2 import PokerTHMessage
-
-PokerTHMessageType = PokerTHMessage.PokerTHMessageType
+from . import pokerth_pb2
+from . import message
 
 
 class PokerTHProtocol(Protocol):
 
     @classmethod
-    def getHook(cls, msg_type):
-        name = [k for k, v in PokerTHMessageType.items() if v == msg_type][0]
-        hook = name.split('_')[1].replace('Message', 'Received')
+    def getHook(cls, msg_name):
+        hook = msg_name.replace('Message', 'Received')
         return hook[0].lower() + hook[1:]
 
     def unhandledMessageReceived(self, msg):
@@ -29,10 +27,8 @@ class PokerTHProtocol(Protocol):
         log.msg('Connection established.')
 
     def dataReceived(self, data):
-        msg = PokerTHMessage()
-        # Skip first 4 bytes when parsing
-        msg.ParseFromString(data[4:])
-        hook = self.getHook(msg.messageType)
+        msg = message.develop(message.unpack(data))
+        hook = self.getHook(msg.__class__.__name__)
         log.msg("Calling {}".format(hook))
         getattr(self, hook)(msg)
 
@@ -41,8 +37,9 @@ class PokerTHProtocol(Protocol):
 
 
 # Set default method for all possible message types
-for _, msg_type in PokerTHMessageType.items():
-    hook = PokerTHProtocol.getHook(msg_type)
+for msg_type in pokerth_pb2.PokerTHMessage.PokerTHMessageType.keys():
+    msg_name = msg_type.split("_", 1)[1]
+    hook = PokerTHProtocol.getHook(msg_name)
     setattr(PokerTHProtocol, hook, PokerTHProtocol.unhandledMessageReceived)
 
 
@@ -54,24 +51,21 @@ class ClientProtocol(PokerTHProtocol):
     state = States.INIT
 
     def announceReceived(self, msg):
-        msgBody = msg.announceMessage
-        reply = PokerTHMessage()
-        reply.messageType = reply.Type_InitMessage
-        replyBody = reply.initMessage
-        replyVersion = replyBody.requestedVersion
-        msgVersion = msgBody.protocolVersion
+        reply = pokerth_pb2.InitMessage()
+
+        replyVersion = reply.requestedVersion
+        msgVersion = msg.protocolVersion
         replyVersion.majorVersion = msgVersion.majorVersion
         replyVersion.minorVersion = msgVersion.minorVersion
-        replyBody.buildId = 0  # 0 for Linux build
-        replyBody.nickName = self.factory.nickName
-        if msgBody.serverType == msgBody.serverTypeInternetNoAuth:
-            replyBody.login = replyBody.unauthenticatedLogin
+
+        reply.buildId = 0  # 0 for Linux build
+        reply.nickName = self.factory.nickName
+        if msg.serverType == msg.serverTypeInternetNoAuth:
+            reply.login = reply.unauthenticatedLogin
         else:
             raise NotImplementedError("Handle authentication!")
         assert reply.IsInitialized()
-        self.transport.write(serialize(reply))
-        log.msg(reply)
-        log.msg(serialize(reply).encode('string-escape'))
+        self.transport.write(message.packEnvelop(reply))
         log.msg("InitMessage sent")
 
 
@@ -86,10 +80,3 @@ class ClientProtocolFactory(ClientFactory):
 
     def clientConnectionFailed(self, connector, reason):
         reactor.stop()
-
-
-def serialize(msg):
-    msg_str = msg.SerializeToString()
-    # Prefix with 4 bytes of message length
-    prefix = bytearray.fromhex(b'{:08x}'.format(len(msg_str)))
-    return str(prefix) + msg_str
