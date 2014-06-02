@@ -5,6 +5,8 @@ install:
   - pip install -r requirements.txt
   - pip install coveralls
   - sudo apt-get install pokerth-server
+before_script:
+  - sudo ln -s /usr/games/pokerth_server /usr/local/bin/pokerth_server
 script:
   - python setup.py test
 after_success:
