@@ -88,6 +88,7 @@ class ClientProtocol(PokerTHProtocol):
             self.factory.rmPlayer(msg.playerId)
 
     def playerInfoReplyReceived(self, msg):
+        log.msg("PlayerInfoReplyMessage received")
         self.factory.setPlayerInfo(msg.playerId, msg.playerInfoData)
 
 

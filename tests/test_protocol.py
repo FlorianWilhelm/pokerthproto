@@ -2,11 +2,11 @@
 
 from __future__ import print_function, absolute_import
 
-import sys
+import random
 
 from twisted.internet.endpoints import TCP4ClientEndpoint, connectProtocol
 from twisted.internet import reactor
-from twisted.python import log
+from twisted.internet.defer import Deferred
 
 from .fixtures import pokerth_server
 
@@ -17,14 +17,15 @@ __copyright__ = 'Florian Wilhelm'
 
 
 def test_ClientProtocol(pokerth_server):
-    log.startLogging(sys.stdout)
+    def test_state(proto):
+        assert proto.state == protocol.States.LOBBY
+
     endpoint = TCP4ClientEndpoint(reactor, 'localhost', 7234)
-    factory = protocol.ClientProtocolFactory('PyClient')
-    proto = factory.buildProtocol('localhost')
-    d = connectProtocol(endpoint, proto)
+    nickname = 'PyClient' + str(random.getrandbits(16))
+    factory = protocol.ClientProtocolFactory(nickname)
+    proto = factory.buildProtocol(('localhost', 7234))
+    connectProtocol(endpoint, proto)
+    d = Deferred()
+    reactor.callLater(2, d.callback, proto)
+    d.addCallback(test_state)
     return d
-
-
-log.startLogging(sys.stdout)
-endpoint = TCP4ClientEndpoint(reactor, 'localhost', 7234)
-endpoint.connect(protocol.ClientProtocolFactory('PyClient'))

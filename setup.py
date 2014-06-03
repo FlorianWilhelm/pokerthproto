@@ -23,7 +23,7 @@ __location__ = os.path.join(os.getcwd(), os.path.dirname(
 
 # Change these settings according to your needs
 MAIN_PACKAGE = "pokerthproto"
-DESCRIPTION = "Python client library for PokerTH"
+DESCRIPTION = "Python protocol library for PokerTH"
 LICENSE = "new BSD"
 URL = "https://github.com/FlorianWilhelm/pokerthproto"
 AUTHOR = "Florian Wilhelm"

@@ -3,6 +3,7 @@
 from __future__ import print_function, absolute_import, division
 
 import os
+import time
 import tempfile
 from subprocess import check_call
 from shutil import rmtree
@@ -42,5 +43,6 @@ def tmpdir():
 def pokerth_server():
     with tempfile.NamedTemporaryFile(dir='./') as fh:
         check_call('pokerth_server -p {}'.format(fh.name), shell=True)
+        time.sleep(1)
         yield
         check_call('kill {}'.format(fh.read()), shell=True)
