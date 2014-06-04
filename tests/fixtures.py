@@ -46,3 +46,4 @@ def pokerth_server():
         time.sleep(1)
         yield
         check_call('kill {}'.format(fh.read()), shell=True)
+        time.sleep(1)

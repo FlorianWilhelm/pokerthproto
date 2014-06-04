@@ -11,6 +11,7 @@ from twisted.internet.protocol import Protocol, ClientFactory
 
 from . import pokerth_pb2
 from . import message
+from . import poker
 
 
 class PokerTHProtocol(Protocol):
@@ -47,7 +48,6 @@ class PokerTHProtocol(Protocol):
         log.msg('Connection established.')
 
     def dataReceived(self, data):
-        log.msg("raw data " + str(data.encode('hex')))
         for buffer in self._getBufferedData(data):
             msg = message.develop(message.unpack(buffer))
             hook = self.getHook(msg.__class__.__name__)
@@ -124,25 +124,19 @@ class ClientProtocolFactory(ClientFactory):
         self.players = []
 
     def addPlayer(self, playerId):
-        player = {'playerId': playerId}
+        player = poker.Player(playerId)
         if player not in self.players:
             self.players.append(player)
 
     def rmPlayer(self, playerId):
-        self.players = [p for p in self.players if p['playerId'] != playerId]
+        self.players = [p for p in self.players if p.id != playerId]
 
     def getPlayer(self, playerId):
-        return [p for p in self.players if p['playerId'] == playerId][0]
+        return [p for p in self.players if p.id == playerId][0]
 
     def setPlayerInfo(self, playerId, infoData):
         player = self.getPlayer(playerId)
-        player['playerName'] = infoData.playerName
-        player['isHuman'] = infoData.isHuman
-        player['playerRights'] = infoData.playerRights
-        avatarData = infoData.avatarData
-        player['avatarData'] = {}
-        player['avatarData']['avatarType'] = avatarData.avatarType
-        player['avatarData']['avatarHash'] = avatarData.avatarHash
+        player.setInfo(infoData)
 
     def clientConnectionLost(self, connector, reason):
         connector.connect()

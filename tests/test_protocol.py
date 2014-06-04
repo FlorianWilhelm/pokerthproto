@@ -36,3 +36,17 @@ def test_lobby(pokerth_server):
     return d
 
 
+def test_players(pokerth_server):
+    def test_players(factory):
+        assert factory.players[0].name == nickname
+        return proto
+
+    endpoint = TCP4ClientEndpoint(reactor, 'localhost', 7234)
+    nickname = 'PyClient' + str(random.getrandbits(23))
+    factory = protocol.ClientProtocolFactory(nickname)
+    proto = factory.buildProtocol(('localhost', 0))
+    connectProtocol(endpoint, proto)
+    d = Deferred()
+    reactor.callLater(1, d.callback, factory)
+    d.addCallback(test_players)
+    return d
