@@ -33,7 +33,7 @@ def test_make_read_SizeBytes():
 
 
 def test_pack_unpack(initMsgData):
-    envelope = message.unpack(initMsgData)
+    envelope = message.unpack(initMsgData[4:])
     assert isinstance(envelope, PokerTHMessage)
     data = message.pack(envelope)
     assert data == initMsgData

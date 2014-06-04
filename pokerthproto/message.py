@@ -36,8 +36,6 @@ def unpack(data):
     :param data: data as string
     :return: PokerTHMessage object containing the message
     """
-    size, data = readSizeBytes(data[:4]), data[4:]
-    assert len(data) == size
     envelope = PokerTHMessage()
     envelope.ParseFromString(data)
     return envelope
@@ -59,11 +57,12 @@ def develop(envelope):
     """
     Remove the envelope from a message.
 
-    :param envelope: PokerTHMessage ojbect that envelops a message
+    :param envelope: PokerTHMessage object that envelops a message
     :return: PokerTH message from the envelope
     """
     msg = [v for _, v in envelope.ListFields() if v != envelope.messageType]
     assert len(msg) == 1
+    assert msg[0].IsInitialized()
     return msg[0]
 
 
@@ -92,7 +91,7 @@ def envelop(msg):
     Put a message into an envelope.
 
     :param msg: PokerTH message object
-    :return: message wrapped in an PokerTHMessage object
+    :return: message wrapped in a PokerTHMessage object
     """
     msg_name = msg.__class__.__name__
     envelope = PokerTHMessage()

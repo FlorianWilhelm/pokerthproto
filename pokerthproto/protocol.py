@@ -14,6 +14,26 @@ from . import message
 
 
 class PokerTHProtocol(Protocol):
+    _buffer = ''
+    _msgSize = None
+
+    def _getBufferedData(self, data):
+        self._buffer += data
+        bufData = []
+        while True:
+            if self._msgSize is None:
+                if len(self._buffer) >= 4:
+                    self._msgSize = message.readSizeBytes(self._buffer[:4])
+                    self._buffer = self._buffer[4:]
+                else:
+                    break
+            if len(self._buffer) >= self._msgSize:
+                bufData.append(self._buffer[:self._msgSize])
+                self._buffer = self._buffer[self._msgSize:]
+                self._msgSize = None
+            else:
+                break
+        return bufData
 
     @classmethod
     def getHook(cls, msg_name):
@@ -27,10 +47,12 @@ class PokerTHProtocol(Protocol):
         log.msg('Connection established.')
 
     def dataReceived(self, data):
-        msg = message.develop(message.unpack(data))
-        hook = self.getHook(msg.__class__.__name__)
-        log.msg('Calling {}'.format(hook))
-        getattr(self, hook)(msg)
+        log.msg("raw data " + str(data.encode('hex')))
+        for buffer in self._getBufferedData(data):
+            msg = message.develop(message.unpack(buffer))
+            hook = self.getHook(msg.__class__.__name__)
+            log.msg('Calling {}'.format(hook))
+            getattr(self, hook)(msg)
 
     def connectionLost(self, reason):
         log.msg('Connection lost due to: {}'.format(reason))
