@@ -31,7 +31,7 @@ def test_lobby(pokerth_server):
     proto = factory.buildProtocol(('localhost', 0))
     connectProtocol(endpoint, proto)
     d = Deferred()
-    reactor.callLater(1, d.callback, proto)
+    reactor.callLater(3, d.callback, proto)
     d.addCallback(test_state)
     return d
 
@@ -47,6 +47,6 @@ def test_players(pokerth_server):
     proto = factory.buildProtocol(('localhost', 0))
     connectProtocol(endpoint, proto)
     d = Deferred()
-    reactor.callLater(1, d.callback, factory)
+    reactor.callLater(3, d.callback, factory)
     d.addCallback(test_players)
     return d
