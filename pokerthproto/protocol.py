@@ -42,7 +42,8 @@ class PokerTHProtocol(Protocol):
         return hook[0].lower() + hook[1:]
 
     def unhandledMessageReceived(self, msg):
-        log.msg('Received unhandled message:\n{}'.format(msg))
+        log.msg('Received unhandled message {}:\n{}'.format(
+            msg.__class__.__name__, msg))
 
     def connectionMade(self):
         log.msg('Connection established.')
@@ -51,7 +52,6 @@ class PokerTHProtocol(Protocol):
         for buffer in self._getBufferedData(data):
             msg = message.develop(message.unpack(buffer))
             hook = self.getHook(msg.__class__.__name__)
-            log.msg('Calling {}'.format(hook))
             getattr(self, hook)(msg)
 
     def connectionLost(self, reason):
@@ -68,6 +68,7 @@ for msg_type in pokerth_pb2.PokerTHMessage.PokerTHMessageType.keys():
 class States(object):
     INIT = 0
     LOBBY = 1
+    GAME = 2
 
 
 class ClientProtocol(PokerTHProtocol):
@@ -97,6 +98,26 @@ class ClientProtocol(PokerTHProtocol):
         self.factory.playerId = msg.yourPlayerId
         self.factory.sessionId = msg.yourSessionId
         self.state = States.LOBBY
+        reactor.callLater(1, self.insideLobby)
+
+    def insideLobby(self):
+        raise NotImplementedError("We are in the lobby, implement an action!")
+
+    def sendJoinExistingGameMessage(self, gameId, autoLeave=False):
+        msg = pokerth_pb2.JoinExistingGameMessage()
+        msg.gameId = gameId
+        msg.autoLeave = autoLeave
+        self.transport.write(message.packEnvelop(msg))
+        log.msg("JoinExistingGameMessage sent")
+
+    def sendJoinNewGameMessage(self, gameInfo, password=None, autoLeave=False):
+        msg = pokerth_pb2.JoinNewGameMessage()
+        msg.gameInfo.MergeFrom(gameInfo.getMsg())
+        if password is not None:
+            msg.password = password
+        msg.autoLeave = autoLeave
+        self.transport.write(message.packEnvelop(msg))
+        log.msg("JoinNewGameMessage sent")
 
     def playerListReceived(self, msg):
         log.msg("PlayerListMessage received")
@@ -113,6 +134,32 @@ class ClientProtocol(PokerTHProtocol):
         log.msg("PlayerInfoReplyMessage received")
         self.factory.setPlayerInfo(msg.playerId, msg.playerInfoData)
 
+    def gameListNewReceived(self, msg):
+        log.msg("GameListNewMessage received")
+        gameInfo = poker.GameInfo()
+        gameInfo.setInfo(msg.gameInfo)
+        game = poker.Game(msg.gameId, msg.gameMode, gameInfo,
+                          msg.isPrivate, msg.adminPlayerId)
+        if game not in self.factory.games:
+            self.factory.games.append(game)
+
+    def gameListPlayerJoinedReceived(self, msg):
+        log.msg("GameListPlayerJoinedMessage received")
+        game = self.factory.getGame(msg.gameId)
+        player = self.factory.getPlayer(msg.playerId)
+        game.add_player(player)
+
+    def gamePlayerJoinedReceived(self, msg):
+        log.msg("GamePlayerJoinedMessage received")
+        game = self.factory.getGame(msg.gameId)
+        player = self.factory.getPlayer(msg.playerId)
+        game.add_player(player)
+
+    def joinGameAckReceived(self, msg):
+        log.msg("JoinGameAckMessage received")
+        self.factory.gameId = msg.gameId
+        self.state = States.GAME
+
 
 class ClientProtocolFactory(ClientFactory):
     protocol = ClientProtocol
@@ -120,8 +167,10 @@ class ClientProtocolFactory(ClientFactory):
     def __init__(self, nickName):
         self.nickName = nickName
         self.playerId = None
+        self.gameId = None
         self.SessionID = None
         self.players = []
+        self.games = []
 
     def addPlayer(self, playerId):
         player = poker.Player(playerId)
@@ -133,6 +182,16 @@ class ClientProtocolFactory(ClientFactory):
 
     def getPlayer(self, playerId):
         return [p for p in self.players if p.id == playerId][0]
+
+    def getGameId(self, gameName):
+        ids = [g.gameId for g in self.games if g.gameInfo.gameName == gameName]
+        if ids:
+            return ids[0]
+        else:
+            raise RuntimeError("No game of name {} found".format(gameName))
+
+    def getGame(self, gameId):
+        return [g for g in self.games if g.gameId == gameId][0]
 
     def setPlayerInfo(self, playerId, infoData):
         player = self.getPlayer(playerId)
