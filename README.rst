@@ -2,10 +2,10 @@
 PokerTHProto
 ============
 
-.. image:: https://travis-ci.org/blue-yonder/pyscaffold.svg?branch=master
+.. image:: https://travis-ci.org/blue-yonder/pokerthproto.svg?branch=master
     :target: https://travis-ci.org/FlorianWilhelm/pokerthproto
-.. image:: https://coveralls.io/repos/blue-yonder/pyscaffold/badge.png
-    :target: https://coveralls.io/r/FlorianWilhelm/pokerthproto
+.. image:: https://coveralls.io/repos/blue-yonder/pokerthproto/badge.png?branch=master
+    :target: https://coveralls.io/r/FlorianWilhelm/pokerthproto?branch=master
 
 The goal of this project is to provide a client interface to a
 `PokerTH <http://pokerth.net/>`__ server. This interface could then be used
