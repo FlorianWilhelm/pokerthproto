@@ -61,7 +61,7 @@ def test_create_game(pokerth_server):
         protocol = PyClientProtocol
 
     def test_in_game(proto):
-        assert proto.state == protocol.States.GAME
+        assert proto.state == protocol.States.GAME_JOINED
 
     endpoint = TCP4ClientEndpoint(reactor, 'localhost', 7234)
     nickname = 'PyClient' + str(random.getrandbits(23))
@@ -85,7 +85,7 @@ def test_create_game(pokerth_server):
         protocol = PyClientProtocol
 
     def test_in_game(proto):
-        assert proto.state == protocol.States.GAME
+        assert proto.state == protocol.States.GAME_JOINED
 
     endpoint = TCP4ClientEndpoint(reactor, 'localhost', 7234)
     nickname = 'PyClient' + str(random.getrandbits(23))

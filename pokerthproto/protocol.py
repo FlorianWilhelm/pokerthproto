@@ -68,7 +68,8 @@ for msg_type in pokerth_pb2.PokerTHMessage.PokerTHMessageType.keys():
 class States(object):
     INIT = 0
     LOBBY = 1
-    GAME = 2
+    GAME_JOINED = 2
+    GAME_STARTED = 3
 
 
 class ClientProtocol(PokerTHProtocol):
@@ -158,7 +159,21 @@ class ClientProtocol(PokerTHProtocol):
     def joinGameAckReceived(self, msg):
         log.msg("JoinGameAckMessage received")
         self.factory.gameId = msg.gameId
-        self.state = States.GAME
+        self.state = States.GAME_JOINED
+
+    def gameListUpdateReceived(self, msg):
+        log.msg("GameListUpdateMessage received")
+        game = self.factory.getGame(msg.gameId)
+        game.gameMode = msg.gameMode
+
+    def startEventReceived(self, msg):
+        log.msg("StartEventMessage received")
+        reply = pokerth_pb2.StartEventAckMessage()
+        reply.gameId = msg.gameId
+        game = self.factory.getCurrentGame()
+        game.fillWithComputerPlayers = msg.fillWithComputerPlayers
+        self.transport.write(message.packEnvelop(reply))
+        log.msg("StartEventAckMessage sent")
 
 
 class ClientProtocolFactory(ClientFactory):
@@ -192,6 +207,12 @@ class ClientProtocolFactory(ClientFactory):
 
     def getGame(self, gameId):
         return [g for g in self.games if g.gameId == gameId][0]
+
+    def getCurrentGame(self):
+        if self.gameId is not None:
+            return self.getGame(self.gameId)
+        else:
+            raise RuntimeError("Not in game currently")
 
     def setPlayerInfo(self, playerId, infoData):
         player = self.getPlayer(playerId)

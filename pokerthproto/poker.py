@@ -9,7 +9,10 @@ __copyright__ = 'Florian Wilhelm'
 
 
 class Player(object):
-
+    """
+    Player in poker game including all information of
+    :obj:`pokerth_pb2.PlayerInfoReplyMessage.playerInfoData`
+    """
     def __init__(self, id):
         self._id = id
 
@@ -51,7 +54,11 @@ class Player(object):
 
 
 class GameInfo(object):
+    """
+    Wrapper object for :obj:`pokerth_pb2.PNetGameInfo`
 
+    This object is needed in order to create an own game.
+    """
     def __init__(self, gameName=None):
         self._gameName = gameName
         self._netGameType = pokerth_pb2.NetGameInfo.normalGame
@@ -160,14 +167,18 @@ class GameInfo(object):
 
 
 class Game(object):
-
+    """
+    A poker game holding the information of :class:`GameInfo` and additional
+    informations about the players etc.
+    """
     def __init__(self, gameId, gameMode, gameInfo, isPrivate, adminPlayerId):
         self._gameId = gameId
-        self._gameMode = gameMode
+        self.gameMode = gameMode
         self._isPrivate = isPrivate
         self._gameInfo = gameInfo
         self._adminPlayerId = adminPlayerId
         self._players = []
+        self.fillWithComputerPlayers = None
 
     @property
     def players(self):
@@ -187,6 +198,10 @@ class Game(object):
     def gameMode(self):
         return self._gameMode
 
+    @gameMode.setter
+    def gameMode(self, mode):
+        self._gameMode = mode
+
     @property
     def isPrivate(self):
         return self._isPrivate
@@ -198,6 +213,14 @@ class Game(object):
     @property
     def adminPlayerId(self):
         return self._adminPlayerId
+
+    @property
+    def fillWithComputerPlayers(self):
+        return self._fillWithComputerPlayers
+
+    @fillWithComputerPlayers.setter
+    def fillWithComputerPlayers(self, value):
+        self._fillWithComputerPlayers = value
 
     def __eq__(self, other):
         if isinstance(other, Game):
