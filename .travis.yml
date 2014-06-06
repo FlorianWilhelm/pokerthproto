@@ -4,7 +4,7 @@ python:
 install:
   - pip install -r requirements.txt
   - pip install coveralls
-  - sudo apt-get install pokerth-server
+  - sudo apt-get install pokerth-server libprotobuf7
   - wget https://launchpad.net/~pkg-games/+archive/ppa/+files/pokerth-server_1.0.1-2~ppa1~precise1_amd64.deb
   - sudo dpkg --install pokerth-server_1.0.1-2~ppa1~precise1_amd64.deb
 before_script:
