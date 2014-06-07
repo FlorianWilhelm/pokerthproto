@@ -8,6 +8,28 @@ __author__ = 'Florian Wilhelm'
 __copyright__ = 'Florian Wilhelm'
 
 
+# suits of poker cards (diamonds, hearts, spades, clubs)
+suits = ['d', 'h', 's', 'c']
+# ranks of poker cards (Ace, Jack, Queens, King, Ten, ...)
+ranks = ['2', '3', '4', '5', '6', '7', '8', '9', 'T', 'J', 'Q', 'K', 'A']
+# deck of poker cards
+deck = [r + s for r in ranks for s in suits]
+
+
+def cardToInt(card):
+    assert len(card) == 2
+    r = ranks.index(card[0])
+    s = suits.index(card[1])
+    return s*13 + r
+
+
+def intToCard(i):
+    assert 0 <= i <= 51
+    s = i // 13
+    r = i % 13
+    return ranks[r] + suits[s]
+
+
 class Player(object):
     """
     Player in poker game including all information of
