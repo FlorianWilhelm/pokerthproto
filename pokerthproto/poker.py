@@ -16,18 +16,42 @@ ranks = ['2', '3', '4', '5', '6', '7', '8', '9', 'T', 'J', 'Q', 'K', 'A']
 deck = [r + s for r in ranks for s in suits]
 
 
+class Action(object):
+    """
+    Enum of possible player actions in poker
+    """
+    CHECK = 0
+    FOLD = 1
+    BET = 2
+    CALL = 3
+    RAISE = 4
+    BET_ALLIN = 5
+    CALL_ALLIN = 7
+    RAISE_ALLIN = 8
+    POST_SB = 9
+    POST_BB = 10
+    POST_DB = 11
+
+
+class Round(object):
+    """
+    Enum of poker rounds where posting blinds is considered a round too
+    """
+    BLINDS = 0
+    PREFLOP = 1
+    FLOP = 2
+    TURN = 3
+    RIVER = 4
+
+
 def cardToInt(card):
     assert len(card) == 2
-    r = ranks.index(card[0])
-    s = suits.index(card[1])
-    return s*13 + r
+    return 13*suits.index(card[1]) + ranks.index(card[0])
 
 
 def intToCard(i):
     assert 0 <= i <= 51
-    s = i // 13
-    r = i % 13
-    return ranks[r] + suits[s]
+    return ranks[i % 13] + suits[i // 13]
 
 
 class Player(object):
@@ -188,6 +212,59 @@ class GameInfo(object):
         return msg
 
 
+class ActionInfo(object):
+    """
+    The action of a player during the poker game
+
+    :param player: name of player
+    :type player: :obj:`string`
+    :param kind: type of the action
+    :type kind: :class:`Action`
+    :param chips: stake of the action if available
+    :type chips: :obj:`float`
+    """
+
+    def __init__(self, player, kind, chips=None):
+        self.player = player
+        self.kind = kind
+        self.chips = chips
+
+    def __eq__(self, other):
+        if isinstance(other, ActionInfo):
+            return self.__dict__ == other.__dict__
+        return NotImplemented
+
+
+class RoundInfo(object):
+    """
+    Information about the poker round
+
+    :param name: name of the poker round
+    :type name: :class:`Round`
+    :param cards: board card of the round
+    :type cards: :obj:`list` from :data:`deck`
+    """
+
+    def __init__(self, name, cards=None, actions=None):
+        self.name = name
+        self.cards = cards if cards else list()
+        self.actions = actions if actions else list()
+
+    def __eq__(self, other):
+        if isinstance(other, RoundInfo):
+            return self.__dict__ == other.__dict__
+        return NotImplemented
+
+
+class GameStateError(Exception):
+
+    def __unicode__(self):
+        return unicode(self.message)
+
+    def __str__(self):
+        return unicode(self).encode('utf-8')
+
+
 class Game(object):
     """
     A poker game holding the information of :class:`GameInfo` and additional
@@ -200,17 +277,31 @@ class Game(object):
         self._gameInfo = gameInfo
         self._adminPlayerId = adminPlayerId
         self._players = []
+        self._rounds = []
         self.fillWithComputerPlayers = None
 
     @property
     def players(self):
         return self._players
 
-    def add_player(self, player):
+    def addPlayer(self, player):
         self._players.append(player)
 
-    def rm_player(self, player):
+    def delPlayer(self, player):
         self._players = [p for p in self._players if p != player]
+
+    def getPlayer(self, id):
+        """
+        Retrieves a player from the game
+
+        :param name: id of the player
+        :return: player
+        """
+        player = [p for p in self._players if p.id == id]
+        if len(player) == 1:
+            return player[0]
+        else:
+            raise GameStateError("Player with id {} not found.".format(id))
 
     @property
     def gameId(self):
@@ -248,3 +339,111 @@ class Game(object):
         if isinstance(other, Game):
             return self.gameId == other.gameId
         return NotImplemented
+
+    def existRound(self, name):
+        """
+        Checks if the poker round exists in this game
+
+        :param name: poker round
+        :type name: :class:`Round`
+        :return: test if round exists
+        :rtype: :obj:`bool`
+        """
+        if name < len(self._rounds):
+            return True
+        else:
+            return False
+
+    def addRound(self, name, cards=None):
+        """
+        Adds a poker round to the game
+
+        :param name: poker round of type :class:`Round`
+        :param cards: board cards of the round
+        """
+        if name < len(self._rounds):
+            raise GameStateError("Poker round exists already.")
+        elif name == len(self._rounds):
+            poker_round = RoundInfo(name=name, cards=cards)
+            self._rounds.append(poker_round)
+        elif name > len(self._rounds):
+            raise GameStateError("Trying to add a poker round at wrong "
+                                 "position.")
+
+    @property
+    def currRound(self):
+        """
+        Current poker round
+
+        :return: poker round
+        :rtype: :class:`Roundinfo`
+        """
+        if self._rounds:
+            return self._rounds[-1]
+        else:
+            raise GameStateError("No poker round available.")
+
+    def isBetPlaced(self):
+        """
+        Checks if a bet has yet been placed
+
+        :return: test if bet is placed
+        :rtype: :obj:`bool`
+        """
+        curr_round = self._curr_round
+        if curr_round.name == Round.BLINDS:
+            raise GameStateError("This function should not be called while "
+                                 "players are posting blinds.")
+        if curr_round.name == Round.PREFLOP:
+            return True
+        for action in curr_round.actions:
+            if action.kind == Action.BET:
+                return True
+        return False
+
+    @property
+    def currBet(self):
+        """
+        The current bet if available
+
+        :return: current bet
+        """
+        curr_round = self._curr_round
+        if curr_round.name == Round.BLINDS:
+            raise GameStateError("This function should not be called while "
+                                 "players are posting blinds.")
+        curr_bet = 0.
+        for action in curr_round.actions:
+            chips = action.chips
+            if chips is not None:
+                curr_bet = max(curr_bet, chips)
+        return curr_bet
+
+    def existPlayer(self, id):
+        """
+        Checks if a player exists in the game
+
+        :param name: id of the player
+        :return: test if player exists
+        """
+        try:
+            self.getPlayer(id)
+        except GameStateError:
+            return False
+        return True
+
+    def addAction(self, id, kind, chips=None):
+        """
+        Adds an action to the current round of the game
+
+        :param player: id of player
+        :param kind: type of the action of :class:`Action`
+        :param chips: stake of the action if available
+        """
+        if not self.existPlayer(id):
+            raise GameStateError("Adding an action of player wiht id {} that "
+                                 "is not in game.".format(id))
+        player = self.getPlayer(id)
+        action = ActionInfo(player=player, kind=kind, chips=chips)
+        self.curr_round.actions.append(action)
+
