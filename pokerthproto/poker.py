@@ -20,28 +20,29 @@ class Action(object):
     """
     Enum of possible player actions in poker
     """
-    CHECK = 0
-    FOLD = 1
-    BET = 2
-    CALL = 3
-    RAISE = 4
-    BET_ALLIN = 5
-    CALL_ALLIN = 7
-    RAISE_ALLIN = 8
-    POST_SB = 9
-    POST_BB = 10
-    POST_DB = 11
+    NONE = pokerth_pb2.netActionNone
+    FOLD = pokerth_pb2.netActionFold
+    CHECK = pokerth_pb2.netActionCheck
+    CALL = pokerth_pb2.netActionCall
+    BET = pokerth_pb2.netActionBet
+    RAISE = pokerth_pb2.netActionRaise
+    ALLIN = pokerth_pb2.netActionAllIn
 
 
 class Round(object):
     """
     Enum of poker rounds where posting blinds is considered a round too
     """
-    BLINDS = 0
-    PREFLOP = 1
-    FLOP = 2
-    TURN = 3
-    RIVER = 4
+    SMALL_BLIND = pokerth_pb2.netStatePreflopSmallBlind
+    BIG_BLIND = pokerth_pb2.netStatePreflopBigBlind
+    PREFLOP = pokerth_pb2.netStatePreflop
+    FLOP = pokerth_pb2.netStateFlop
+    TURN = pokerth_pb2.netStateTurn
+    RIVER = pokerth_pb2.netStateRiver
+
+
+poker_rounds = [Round.SMALL_BLIND, Round.BIG_BLIND, Round.PREFLOP, Round.FLOP,
+                Round.TURN, Round.RIVER]
 
 
 def cardToInt(card):
@@ -344,7 +345,8 @@ class Game(object):
         :return: test if round exists
         :rtype: :obj:`bool`
         """
-        if name < len(self._rounds):
+        position = poker_rounds.index(name)
+        if position < len(self._rounds):
             return True
         else:
             return False
@@ -356,12 +358,13 @@ class Game(object):
         :param name: poker round of type :class:`Round`
         :param cards: board cards of the round
         """
-        if name < len(self._rounds):
+        position = poker_rounds.index(name)
+        if position < len(self._rounds):
             raise GameStateError("Poker round exists already.")
-        elif name == len(self._rounds):
+        elif position == len(self._rounds):
             poker_round = RoundInfo(name=name, cards=cards)
             self._rounds.append(poker_round)
-        elif name > len(self._rounds):
+        elif position > len(self._rounds):
             raise GameStateError("Trying to add a poker round at wrong "
                                  "position.")
 

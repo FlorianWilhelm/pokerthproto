@@ -26,10 +26,10 @@ def test_round_actions():
     game = poker.Game(1, pokerth_pb2.netGameCreated, gameInfo, False, 1)
     with pytest.raises(poker.GameStateError):
         game.currRound()
-    game.addRound(poker.Round.BLINDS)
-    assert game.existRound(poker.Round.BLINDS)
+    game.addRound(poker.Round.SMALL_BLIND)
+    assert game.existRound(poker.Round.SMALL_BLIND)
     assert not game.existRound(poker.Round.RIVER)
-    assert game.currRound.name == poker.Round.BLINDS
+    assert game.currRound.name == poker.Round.SMALL_BLIND
     with pytest.raises(poker.GameStateError):
         game.addRound(poker.Round.FLOP)
 
