@@ -214,14 +214,11 @@ class GameInfo(object):
 
 class ActionInfo(object):
     """
-    The action of a player during the poker game
+    The action of a player during the poker game.
 
-    :param player: name of player
-    :type player: :obj:`string`
-    :param kind: type of the action
-    :type kind: :class:`Action`
+    :param player: player (:class:`Player`)
+    :param kind: type of the action (:class:`Action`)
     :param chips: stake of the action if available
-    :type chips: :obj:`float`
     """
 
     def __init__(self, player, kind, chips=None):
@@ -237,12 +234,10 @@ class ActionInfo(object):
 
 class RoundInfo(object):
     """
-    Information about the poker round
+    Information about the poker round.
 
-    :param name: name of the poker round
-    :type name: :class:`Round`
-    :param cards: board card of the round
-    :type cards: :obj:`list` from :data:`deck`
+    :param name: name of the poker round (:class:`Round`)
+    :param cards: board card of the round as defined in :data:`deck`
     """
 
     def __init__(self, name, cards=None, actions=None):
@@ -432,18 +427,36 @@ class Game(object):
             return False
         return True
 
-    def addAction(self, id, kind, chips=None):
+    def addAction(self, playerId, kind, chips=None):
         """
         Adds an action to the current round of the game
 
-        :param player: id of player
+        :param playerId: id of player
         :param kind: type of the action of :class:`Action`
-        :param chips: stake of the action if available
+        :param chips: stake of the action if availPlayerIdable
         """
-        if not self.existPlayer(id):
+        if not self.existPlayer(playerId):
             raise GameStateError("Adding an action of player wiht id {} that "
-                                 "is not in game.".format(id))
-        player = self.getPlayer(id)
+                                 "is not in game.".format(playerId))
+        player = self.getPlayer(playerId)
         action = ActionInfo(player=player, kind=kind, chips=chips)
         self.curr_round.actions.append(action)
 
+    def getActions(self, playerId=None, rounds=None):
+        """
+        Retrieves actions from the game with optional restrictions on rounds
+        and a player.
+
+        :param playerId: id of the player or :obj:`None` for all players
+        :param rounds: list of rounds (:class:`Round`) to consider
+        :return: found actions :class:`Actioninfo`
+        """
+        # Select all rounds if None is given
+        rounds = rounds if rounds is not None else range(len(self._rounds))
+        actions = list()
+        for poker_round in rounds:
+            actions.extend(self._rounds[poker_round].actions)
+        if playerId is not None:
+            player = self.getPlayer(playerId)
+            actions = [action for action in actions if action.player == player]
+        return actions
