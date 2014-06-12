@@ -388,13 +388,13 @@ class Game(object):
         :return: test if bet is placed
         :rtype: :obj:`bool`
         """
-        curr_round = self._curr_round
-        if curr_round.name == Round.BLINDS:
+        round_name = self.currRound.name
+        if round_name == Round.SMALL_BLIND or round_name == Round.BIG_BLIND:
             raise GameStateError("This function should not be called while "
                                  "players are posting blinds.")
-        if curr_round.name == Round.PREFLOP:
+        if round_name == Round.PREFLOP:
             return True
-        for action in curr_round.actions:
+        for action in self.currRound.actions:
             if action.kind == Action.BET:
                 return True
         return False
@@ -406,12 +406,12 @@ class Game(object):
 
         :return: current bet
         """
-        curr_round = self._curr_round
-        if curr_round.name == Round.BLINDS:
+        round_name = self.currRound.name
+        if round_name == Round.SMALL_BLIND or round_name == Round.BIG_BLIND:
             raise GameStateError("This function should not be called while "
                                  "players are posting blinds.")
         curr_bet = 0.
-        for action in curr_round.actions:
+        for action in self.currRound.actions:
             chips = action.chips
             if chips is not None:
                 curr_bet = max(curr_bet, chips)
@@ -443,7 +443,7 @@ class Game(object):
                                  "is not in game.".format(playerId))
         player = self.getPlayer(playerId)
         action = ActionInfo(player=player, kind=kind, chips=chips)
-        self.curr_round.actions.append(action)
+        self.currRound.actions.append(action)
 
     def getActions(self, playerId=None, rounds=None):
         """
@@ -454,8 +454,10 @@ class Game(object):
         :param rounds: list of rounds (:class:`Round`) to consider
         :return: found actions :class:`Actioninfo`
         """
-        # Select all rounds if None is given
-        rounds = rounds if rounds is not None else range(len(self._rounds))
+        if rounds is not None:
+            rounds = [poker_rounds.index(round) for round in rounds]
+        else:
+            rounds = range(len(self._rounds))
         actions = list()
         for poker_round in rounds:
             actions.extend(self._rounds[poker_round].actions)
