@@ -5,7 +5,7 @@ from twisted.application import internet, service
 
 from twisted.internet import reactor
 from pokerthproto.protocol import ClientProtocolFactory, ClientProtocol
-from pokerthproto.poker import GameInfo
+from pokerthproto.gamelist import GameInfo
 
 __author__ = 'Florian Wilhelm'
 __copyright__ = 'Florian Wilhelm'
@@ -17,7 +17,7 @@ class PyClientProtocol(ClientProtocol):
 
     def joinGame(self, gameName):
         try:
-            gameId = self.factory.getGameId(gameName)
+            gameId = self.factory.gameList.getGameInfoId(gameName)
         except RuntimeError:
             reactor.callLater(1, self.joinGame, gameName)
         else:
@@ -27,12 +27,13 @@ class PyClientProtocol(ClientProtocol):
         gameInfo = GameInfo('PyClient Game')
         self.sendJoinNewGameMessage(gameInfo)
 
+
 class PyClientProtocolFactory(ClientProtocolFactory):
     protocol = PyClientProtocol
 
 
 
 application = service.Application('PokerTH Client')
-client_factory = PyClientProtocolFactory('PyClient')
+client_factory = PyClientProtocolFactory('PyClient123')
 service = internet.TCPClient('localhost', 7234, client_factory)
 service.setServiceParent(application)

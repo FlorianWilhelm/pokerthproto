@@ -11,7 +11,8 @@ from twisted.internet.protocol import Protocol, ClientFactory
 
 from . import pokerth_pb2
 from . import message
-from . import poker
+from . import gamelist
+from . import game
 
 
 class PokerTHProtocol(Protocol):
@@ -126,58 +127,62 @@ class ClientProtocol(PokerTHProtocol):
     def playerListReceived(self, msg):
         log.msg("PlayerListMessage received")
         if msg.playerListNotification == msg.playerListNew:
-            self.factory.addPlayer(msg.playerId)
+            self.factory.gameList.addPlayer(msg.playerId)
             reply = pokerth_pb2.PlayerInfoRequestMessage()
             reply.playerId.append(msg.playerId)
             self.transport.write(message.packEnvelop(reply))
             log.msg("InfoRequestMessage sent")
         else:  # msg.playerListLeft
-            self.factory.delPlayer(msg.playerId)
+            self.factory.gameList.delPlayer(msg.playerId)
 
     def playerInfoReplyReceived(self, msg):
         log.msg("PlayerInfoReplyMessage received")
-        self.factory.setPlayerInfo(msg.playerId, msg.playerInfoData)
+        self.factory.gameList.setPlayerInfo(msg.playerId, msg.playerInfoData)
 
     def gameListNewReceived(self, msg):
         log.msg("GameListNewMessage received")
-        gameInfo = poker.GameInfo()
+        gameInfo = gamelist.GameInfo()
         gameInfo.setInfo(msg.gameInfo)
-        game = poker.Game(msg.gameId, msg.gameMode, gameInfo,
-                          msg.isPrivate, msg.adminPlayerId)
-        if game not in self.factory.games:
-            self.factory.games.append(game)
+        gameInfo.gameId = msg.gameId
+        gameInfo.gameMode = msg.gameMode
+        gameInfo.isPrivae = msg.isPrivate
+        gameInfo.adminPlayerid = msg.adminPlayerId
+        self.factory.gameList.addGameInfo(gameInfo)
 
     def gameListPlayerJoinedReceived(self, msg):
         log.msg("GameListPlayerJoinedMessage received")
-        game = self.factory.getGame(msg.gameId)
-        player = self.factory.getPlayer(msg.playerId)
-        game.addPlayer(player)
+        self.factory.gameList.addPlayerToGame(msg.playerId, msg.gameId)
 
     def gamePlayerJoinedReceived(self, msg):
         log.msg("GamePlayerJoinedMessage received")
-        game = self.factory.getGame(msg.gameId)
-        player = self.factory.getPlayer(msg.playerId)
-        game.addPlayer(player)
+        player = self.factory.gameList.getPlayer(msg.playerId)
+        assert self.factory.game.gameId == msg.gameId
+        self.factory.game.addPlayer(player)
 
     def joinGameAckReceived(self, msg):
         log.msg("JoinGameAckMessage received")
-        self.factory.gameId = msg.gameId
+        self.factory.game = game.Game(msg.gameId)
         self.state = States.GAME_JOINED
 
     def gameListUpdateReceived(self, msg):
         log.msg("GameListUpdateMessage received")
-        game = self.factory.getGame(msg.gameId)
+        game = self.factory.gameList.getGame(msg.gameId)
         game.gameMode = msg.gameMode
 
-    def startEventReceived(self, msg):
-        log.msg("StartEventMessage received")
-        reply = pokerth_pb2.StartEventAckMessage()
-        reply.gameId = msg.gameId
-        game = self.factory.getCurrentGame()
-        game.fillWithComputerPlayers = msg.fillWithComputerPlayers
-        self.transport.write(message.packEnvelop(reply))
-        log.msg("StartEventAckMessage sent")
-        self.state = States.GAME_STARTED
+    # def startEventReceived(self, msg):
+    #     log.msg("StartEventMessage received")
+    #     reply = pokerth_pb2.StartEventAckMessage()
+    #     reply.gameId = msg.gameId
+    #     game = self.factory.gameList.getCurrentGame()
+    #     game.fillWithComputerPlayers = msg.fillWithComputerPlayers
+    #     self.transport.write(message.packEnvelop(reply))
+    #     log.msg("StartEventAckMessage sent")
+    #     self.state = States.GAME_STARTED
+
+    # def GameStartInitialReceived(self, msg):
+    #     log.msg("GameStartInitialMessage received")
+    #     game = self.factory.getGame(msg.gameId)
+    # ...
 
 
 class ClientProtocolFactory(ClientFactory):
@@ -188,42 +193,12 @@ class ClientProtocolFactory(ClientFactory):
         self.playerId = None
         self.gameId = None
         self.SessionID = None
-        self.players = []
-        self.games = []
-
-    def addPlayer(self, playerId):
-        player = poker.Player(playerId)
-        if player not in self.players:
-            self.players.append(player)
-
-    def rmPlayer(self, playerId):
-        self.players = [p for p in self.players if p.id != playerId]
-
-    def getPlayer(self, playerId):
-        return [p for p in self.players if p.id == playerId][0]
-
-    def getGameId(self, gameName):
-        ids = [g.gameId for g in self.games if g.gameInfo.gameName == gameName]
-        if ids:
-            return ids[0]
-        else:
-            raise RuntimeError("No game of name {} found".format(gameName))
-
-    def getGame(self, gameId):
-        return [g for g in self.games if g.gameId == gameId][0]
-
-    def getCurrentGame(self):
-        if self.gameId is not None:
-            return self.getGame(self.gameId)
-        else:
-            raise RuntimeError("Not in a game currently")
-
-    def setPlayerInfo(self, playerId, infoData):
-        player = self.getPlayer(playerId)
-        player.setInfo(infoData)
+        self.game = None
+        self.gameList = gamelist.GameList()
 
     def clientConnectionLost(self, connector, reason):
-        connector.connect()
+        pass
+        # connector.connect()
 
     def clientConnectionFailed(self, connector, reason):
         reactor.stop()
