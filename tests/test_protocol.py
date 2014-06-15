@@ -13,7 +13,7 @@ from twisted.internet.defer import Deferred
 from .fixtures import pokerth_server
 
 from pokerthproto import protocol
-from pokerthproto import gamelist
+from pokerthproto import lobby
 
 __author__ = 'Florian Wilhelm'
 __copyright__ = 'Florian Wilhelm'
@@ -54,7 +54,7 @@ def test_players(pokerth_server):
         protocol = PyClientProtocol
 
     def test_players(factory):
-        assert factory.gameList.players[0].name == nickname
+        assert factory.lobby.players[0].name == nickname
 
     endpoint = TCP4ClientEndpoint(reactor, 'localhost', 7234)
     nickname = 'PyClient' + str(random.getrandbits(23))
@@ -71,7 +71,7 @@ def test_create_game(pokerth_server):
     class PyClientProtocol(protocol.ClientProtocol):
 
         def insideLobby(self):
-            gameInfo = gamelist.GameInfo('PyClient Game')
+            gameInfo = lobby.GameInfo('PyClient Game')
             self.sendJoinNewGameMessage(gameInfo)
 
     class PyClientProtocolFactory(protocol.ClientProtocolFactory):

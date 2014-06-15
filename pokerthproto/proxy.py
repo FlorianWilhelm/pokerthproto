@@ -20,8 +20,8 @@ class ProxyProtocol(protocol.PokerTHProtocol):
         log.msg("Client connection established")
         self.point = TCP4ClientEndpoint(reactor, "localhost", 7234)
         client_factory = ClientProtocolFactory(self.sendToClient)
-        self.client_proto = self.point.connect(client_factory)
-        self.client_proto.addCallback(self.registerServer)
+        proto = self.point.connect(client_factory)
+        proto.addCallback(self.registerServer)
 
     def registerServer(self, proto):
         self.client_proto = proto

@@ -5,7 +5,7 @@ from twisted.application import internet, service
 
 from twisted.internet import reactor
 from pokerthproto.protocol import ClientProtocolFactory, ClientProtocol
-from pokerthproto.gamelist import GameInfo
+from pokerthproto.lobby import GameInfo
 
 __author__ = 'Florian Wilhelm'
 __copyright__ = 'Florian Wilhelm'
