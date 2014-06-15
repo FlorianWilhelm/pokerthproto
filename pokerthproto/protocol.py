@@ -162,22 +162,24 @@ class ClientProtocol(PokerTHProtocol):
     def joinGameAckReceived(self, msg):
         log.msg("JoinGameAckMessage received")
         self.factory.game = game.Game(msg.gameId)
+        myself = self.factory.gameList.getPlayer(self.factory.playerId)
+        self.factory.game.addPlayer(myself)
         self.state = States.GAME_JOINED
 
     def gameListUpdateReceived(self, msg):
         log.msg("GameListUpdateMessage received")
-        game = self.factory.gameList.getGame(msg.gameId)
-        game.gameMode = msg.gameMode
+        gameInfo = self.factory.gameList.getGameInfo(msg.gameId)
+        gameInfo.gameMode = msg.gameMode
 
-    # def startEventReceived(self, msg):
-    #     log.msg("StartEventMessage received")
-    #     reply = pokerth_pb2.StartEventAckMessage()
-    #     reply.gameId = msg.gameId
-    #     game = self.factory.gameList.getCurrentGame()
-    #     game.fillWithComputerPlayers = msg.fillWithComputerPlayers
-    #     self.transport.write(message.packEnvelop(reply))
-    #     log.msg("StartEventAckMessage sent")
-    #     self.state = States.GAME_STARTED
+    def startEventReceived(self, msg):
+        log.msg("StartEventMessage received")
+        gameInfo = self.factory.gameList.getGameInfo(self.factory.gameId)
+        gameInfo.fillWithComputerPlayers = msg.fillWithComputerPlayers
+        reply = pokerth_pb2.StartEventAckMessage()
+        reply.gameId = msg.gameId
+        self.transport.write(message.packEnvelop(reply))
+        log.msg("StartEventAckMessage sent")
+        self.state = States.GAME_STARTED
 
     # def GameStartInitialReceived(self, msg):
     #     log.msg("GameStartInitialMessage received")

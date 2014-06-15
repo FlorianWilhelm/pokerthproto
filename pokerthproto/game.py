@@ -66,7 +66,6 @@ class Game(object):
         self._players = []
         self._dealer = None
         self._rounds = []
-        self.fillWithComputerPlayers = None
 
     @property
     def players(self):
@@ -114,14 +113,6 @@ class Game(object):
     @property
     def adminPlayerId(self):
         return self._adminPlayerId
-
-    @property
-    def fillWithComputerPlayers(self):
-        return self._fillWithComputerPlayers
-
-    @fillWithComputerPlayers.setter
-    def fillWithComputerPlayers(self, value):
-        self._fillWithComputerPlayers = value
 
     def __eq__(self, other):
         if isinstance(other, Game):

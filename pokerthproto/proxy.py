@@ -4,19 +4,19 @@ from __future__ import print_function, absolute_import, division
 
 from twisted.internet import reactor
 from twisted.python import log
-from twisted.internet.protocol import Protocol, Factory
+from twisted.internet.protocol import Factory
 from twisted.internet.endpoints import TCP4ClientEndpoint
 
-from . import pokerth_pb2
+from . import message
+from . import protocol
 
 __author__ = 'Florian Wilhelm'
 __copyright__ = 'Florian Wilhelm'
 
 
-class ProxyProtocol(Protocol):
+class ProxyProtocol(protocol.PokerTHProtocol):
 
     def connectionMade(self):
-        self.factory.numConnections += 1
         log.msg("Client connection established")
         self.point = TCP4ClientEndpoint(reactor, "localhost", 7234)
         client_factory = ClientProtocolFactory(self.sendToClient)
@@ -30,33 +30,23 @@ class ProxyProtocol(Protocol):
         self.transport.write(data)
 
     def dataReceived(self, data):
-        msg = pokerth_pb2.PokerTHMessage()
-        msg.ParseFromString(data[4:])
-        log.msg("From client: {}".format(msg))
-        log.msg(data.encode('string-escape'))
+        for buffer in self._getBufferedData(data):
+            msg = message.develop(message.unpack(buffer))
+            log.msg("{} from client:\n{}".format(msg.__class__.__name__, msg))
         self.client_proto.transport.write(data)
-
-    def connectionLost(self, reason):
-        log.msg('Client connection lost due to: {}'.format(reason))
 
 
 class ProxyProtocolFactory(Factory):
     protocol = ProxyProtocol
-    numConnections = 0
 
 
-class ClientProtocol(Protocol):
-    def connectionMade(self):
-        log.msg("Connection to server established")
+class ClientProtocol(protocol.PokerTHProtocol):
 
     def dataReceived(self, data):
-        msg = pokerth_pb2.PokerTHMessage()
-        msg.ParseFromString(data[4:])
-        log.msg("From server: {}".format(msg))
+        for buffer in self._getBufferedData(data):
+            msg = message.develop(message.unpack(buffer))
+            log.msg("{} from server:\n{}".format(msg.__class__.__name__, msg))
         self.factory.sendToClient(data)
-
-    def connectionLost(self, reason):
-        log.msg('Server connection lost due to: {}'.format(reason))
 
 
 class ClientProtocolFactory(Factory):

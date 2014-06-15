@@ -35,6 +35,7 @@ class GameInfo(object):
         self._adminPlayerId = None
         self._manualBlinds = []
         self._players = []
+        self._fillWithComputerPlayers = None
 
     @property
     def gameName(self):
@@ -161,6 +162,14 @@ class GameInfo(object):
     @property
     def players(self):
         return self._players
+
+    @property
+    def fillWithComputerPlayers(self):
+        return self._fillWithComputerPlayers
+
+    @fillWithComputerPlayers.setter
+    def fillWithComputerPlayers(self, bool):
+        self._fillWithComputerPlayers = bool
 
     def __eq__(self, other):
         if isinstance(other, GameInfo):
