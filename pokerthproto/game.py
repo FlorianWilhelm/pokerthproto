@@ -94,26 +94,6 @@ class Game(object):
     def gameId(self):
         return self._gameId
 
-    @property
-    def gameMode(self):
-        return self._gameMode
-
-    @gameMode.setter
-    def gameMode(self, mode):
-        self._gameMode = mode
-
-    @property
-    def isPrivate(self):
-        return self._isPrivate
-
-    @property
-    def gameInfo(self):
-        return self._gameInfo
-
-    @property
-    def adminPlayerId(self):
-        return self._adminPlayerId
-
     def __eq__(self, other):
         if isinstance(other, Game):
             return self.gameId == other.gameId

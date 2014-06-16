@@ -199,7 +199,7 @@ class ClientProtocolFactory(ClientFactory):
         self.gameId = None
         self.SessionID = None
         self.game = None
-        self.lobby = lobby.GameList()
+        self.lobby = lobby.Lobby()
 
     def clientConnectionLost(self, connector, reason):
         pass

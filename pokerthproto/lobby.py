@@ -177,7 +177,7 @@ class GameInfo(object):
         return NotImplemented
 
 
-class GameListError(Exception):
+class LobbyError(Exception):
 
     def __unicode__(self):
         return unicode(self.message)
@@ -186,7 +186,7 @@ class GameListError(Exception):
         return unicode(self).encode('utf-8')
 
 
-class GameList(object):
+class Lobby(object):
 
     def __init__(self):
         self._players = []
@@ -200,7 +200,7 @@ class GameList(object):
         if gameInfo not in self._gameInfos:
             self._gameInfos.append(gameInfo)
         else:
-            raise GameListError("Game is already in our list of games")
+            raise LobbyError("Game is already in our list of games")
 
     @property
     def players(self):
@@ -210,23 +210,34 @@ class GameList(object):
         player = Player(playerId)
         if player not in self._players:
             self._players.append(player)
+        else:
+            raise LobbyError("Player with id {} already listed".format(
+                playerId))
 
     def rmPlayer(self, playerId):
         player = Player(playerId)
         self._players.remove(player)
 
     def getPlayer(self, playerId):
-        return [p for p in self._players if p.id == playerId][0]
+        players = [p for p in self._players if p.id == playerId]
+        if len(players) == 1:
+            return players[0]
+        else:
+            raise LobbyError("Player with id {} not listed".format(playerId))
 
     def getGameInfoId(self, gameName):
         ids = [g.gameId for g in self._gameInfos if g.gameName == gameName]
-        if ids:
+        if len(ids) == 1:
             return ids[0]
         else:
-            raise RuntimeError("No game of name {} found".format(gameName))
+            raise LobbyError("No game of name {} found".format(gameName))
 
     def getGameInfo(self, gameId):
-        return [g for g in self._gameInfos if g.gameId == gameId][0]
+        gameInfos = [g for g in self._gameInfos if g.gameId == gameId]
+        if len(gameInfos) == 1:
+            return gameInfos[0]
+        else:
+            raise LobbyError("Game with id {} not listed".format(gameId))
 
     def setPlayerInfo(self, playerId, infoData):
         player = self.getPlayer(playerId)
