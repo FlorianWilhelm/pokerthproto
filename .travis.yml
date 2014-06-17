@@ -7,6 +7,8 @@ install:
   - sudo apt-get install pokerth-server libprotobuf7
   - wget https://launchpad.net/~pkg-games/+archive/ppa/+files/pokerth-server_1.0.1-2~ppa1~precise1_amd64.deb
   - sudo dpkg --install pokerth-server_1.0.1-2~ppa1~precise1_amd64.deb
+  - pokerth_server; sleep 1; killall pokerth_server
+  - sed -i.bak s/BruteForceProtection value="1"/BruteForceProtection value="0"/g ~/.pokerth/config.xml
 before_script:
   - sudo ln -s /usr/games/pokerth_server /usr/local/bin/pokerth_server
 script:
