@@ -214,7 +214,7 @@ class Lobby(object):
             raise LobbyError("Player with id {} already listed".format(
                 playerId))
 
-    def rmPlayer(self, playerId):
+    def delPlayer(self, playerId):
         player = Player(playerId)
         self._players.remove(player)
 

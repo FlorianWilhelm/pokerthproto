@@ -34,7 +34,7 @@ def test_players():
     lobby.addPlayer(2)
     with pytest.raises(LobbyError):
         lobby.addPlayer(2)
-    lobby.rmPlayer(2)
+    lobby.delPlayer(2)
     assert len(lobby.players) == 1
     player = lobby.getPlayer(1)
     assert player.id == 1

@@ -47,7 +47,7 @@ class RoundInfo(object):
         return NotImplemented
 
 
-class GameStateError(Exception):
+class GameError(Exception):
 
     def __unicode__(self):
         return unicode(self.message)
@@ -58,8 +58,7 @@ class GameStateError(Exception):
 
 class Game(object):
     """
-    A poker game holding the information of :class:`GameInfo` and additional
-    informations about the players etc.
+    A poker game holding the information about the actions of the players.
     """
     def __init__(self, gameId):
         self._gameId = gameId
@@ -72,10 +71,14 @@ class Game(object):
         return self._players
 
     def addPlayer(self, player):
-        self._players.append(player)
+        if player not in self._players:
+            self._players.append(player)
+        else:
+            raise GameError("Player with id {} already listed".format(
+                player.id))
 
     def delPlayer(self, player):
-        self._players = [p for p in self._players if p != player]
+        self._players.remove(player)
 
     def getPlayer(self, id):
         """
@@ -88,7 +91,7 @@ class Game(object):
         if len(player) == 1:
             return player[0]
         else:
-            raise GameStateError("Player with id {} not found.".format(id))
+            raise GameError("Player with id {} not found.".format(id))
 
     @property
     def gameId(self):
@@ -121,12 +124,12 @@ class Game(object):
         """
         position = poker_rounds.index(name)
         if position < len(self._rounds):
-            raise GameStateError("Poker round exists already.")
+            raise GameError("Poker round exists already.")
         elif position == len(self._rounds):
             poker_round = RoundInfo(name=name, cards=cards)
             self._rounds.append(poker_round)
         elif position > len(self._rounds):
-            raise GameStateError("Trying to add a poker round at wrong "
+            raise GameError("Trying to add a poker round at wrong "
                                  "position.")
 
     @property
@@ -140,7 +143,7 @@ class Game(object):
         if self._rounds:
             return self._rounds[-1]
         else:
-            raise GameStateError("No poker round available.")
+            raise GameError("No poker round available.")
 
     def isBetPlaced(self):
         """
@@ -151,7 +154,7 @@ class Game(object):
         """
         round_name = self.currRound.name
         if round_name == Round.SMALL_BLIND or round_name == Round.BIG_BLIND:
-            raise GameStateError("This function should not be called while "
+            raise GameError("This function should not be called while "
                                  "players are posting blinds.")
         if round_name == Round.PREFLOP:
             return True
@@ -169,7 +172,7 @@ class Game(object):
         """
         round_name = self.currRound.name
         if round_name == Round.SMALL_BLIND or round_name == Round.BIG_BLIND:
-            raise GameStateError("This function should not be called while "
+            raise GameError("This function should not be called while "
                                  "players are posting blinds.")
         curr_bet = 0.
         for action in self.currRound.actions:
@@ -187,7 +190,7 @@ class Game(object):
         """
         try:
             self.getPlayer(id)
-        except GameStateError:
+        except GameError:
             return False
         return True
 
@@ -200,7 +203,7 @@ class Game(object):
         :param chips: stake of the action if availPlayerIdable
         """
         if not self.existPlayer(playerId):
-            raise GameStateError("Adding an action of player wiht id {} that "
+            raise GameError("Adding an action of player wiht id {} that "
                                  "is not in game.".format(playerId))
         player = self.getPlayer(playerId)
         action = ActionInfo(player=player, kind=kind, chips=chips)
