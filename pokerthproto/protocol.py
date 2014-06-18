@@ -95,8 +95,7 @@ class ClientProtocol(PokerTHProtocol):
         else:
             raise NotImplementedError("Handle authentication!")
         assert reply.IsInitialized()
-        #self.transport.write(message.packEnvelop(reply))
-        reactor.callLater(4, self.transport.write, message.packEnvelop(reply))
+        self.transport.write(message.packEnvelop(reply))
         log.msg("InitMessage sent")
 
     def initAckReceived(self, msg):
