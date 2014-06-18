@@ -13,6 +13,7 @@ from . import pokerth_pb2
 from . import message
 from . import lobby
 from . import game
+from . import poker
 
 
 class PokerTHProtocol(Protocol):
@@ -105,6 +106,7 @@ class ClientProtocol(PokerTHProtocol):
         self.state = States.LOBBY
         reactor.callLater(1, self.insideLobby)
 
+    # Overwrite this function in subclass
     def insideLobby(self):
         raise NotImplementedError("We are in the lobby, implement an action!")
 
@@ -176,7 +178,8 @@ class ClientProtocol(PokerTHProtocol):
 
     def startEventReceived(self, msg):
         log.msg("StartEventMessage received")
-        gameInfo = self.factory.lobby.getGameInfo(self.factory.gameId)
+        assert self.factory.game.gameId == msg.gameId
+        gameInfo = self.factory.lobby.getGameInfo(msg.gameId)
         gameInfo.fillWithComputerPlayers = msg.fillWithComputerPlayers
         reply = pokerth_pb2.StartEventAckMessage()
         reply.gameId = msg.gameId
@@ -184,10 +187,58 @@ class ClientProtocol(PokerTHProtocol):
         log.msg("StartEventAckMessage sent")
         self.state = States.GAME_STARTED
 
-    # def GameStartInitialReceived(self, msg):
-    #     log.msg("GameStartInitialMessage received")
-    #     game = self.factory.getGame(msg.gameId)
-    # ...
+    def chatReceived(self, msg):
+        log.msg("ChatMessage received")
+        chatTypes = pokerth_pb2.ChatMessage.ChatType.items()
+        chatType = [k for k, v in chatTypes if v == msg.chatType][0]
+        gameId = msg.gameId if msg.gameId != 0 else None
+        playerId = msg.playerId if msg.playerId != 0 else None
+        self.handleChat(chatType, msg.chatText, gameId, playerId)
+
+    def sendChatRequest(self, text, gameId=None, playerId=None):
+        msg = pokerth_pb2.ChatRequestMessage()
+        msg.chatText = text
+        if gameId is not None:
+            msg.gameId = gameId
+        if playerId is not None:
+            msg.playerId = gameId
+        self.transport.write(message.packEnvelop(msg))
+        log.msg("ChatRequestMessage sent")
+
+    # Overwrite this function in subclass
+    def handleChat(self, chatType, text, gameId=None, playerId=None):
+        type = chatType.replace('chatType', '')
+        log_str = ''
+        if gameId is not None:
+            game = self.factory.lobby.getGameInfo(gameId)
+            log_str += '<{game}> '
+        else:
+            game = None
+        if playerId is not None:
+            player = self.factory.lobby.getPlayer(playerId).name
+            log_str += '{player} '
+        else:
+            player = None
+        log_str += '[{type}]: {text}'
+        log.msg(log_str.format(game=game, player=player, type=type, text=text))
+
+    def gameStartInitialReceived(self, msg):
+        log.msg("GameStartInitialMessage received")
+        assert self.factory.game.gameId == msg.gameId
+        self.factory.game.dealer = msg.startDealerPlayerId
+        for seat, playerId in enumerate(msg.playerSeats):
+            player = self.factory.game.getPlayer(playerId)
+            player.seat = seat
+
+    def handStartReceived(self, msg):
+        log.msg("HandStartMessage received")
+        game = self.factory.game
+        assert game.gameId == msg.gameId
+        game.smallBlind = msg.smallBlind
+        cards = (msg.plainCards.plainCard1, msg.plainCards.plainCard2)
+        game.pocketCards = [poker.intToCard(card) for card in cards]
+        # TODO: Handle Seatstates
+        log.msg("Got cards {}".format(game.pocketCards))
 
 
 class ClientProtocolFactory(ClientFactory):
@@ -196,13 +247,13 @@ class ClientProtocolFactory(ClientFactory):
     def __init__(self, nickName):
         self.nickName = nickName
         self.playerId = None
-        self.gameId = None
         self.SessionID = None
         self.game = None
         self.lobby = lobby.Lobby()
 
     def clientConnectionLost(self, connector, reason):
-        connector.connect()
+        pass
+        #connector.connect()
 
     def clientConnectionFailed(self, connector, reason):
         reactor.stop()

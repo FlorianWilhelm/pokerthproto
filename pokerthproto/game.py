@@ -2,7 +2,7 @@
 
 from __future__ import print_function, absolute_import, division
 
-from .poker import poker_rounds, Round, Action
+from .poker import poker_rounds, Round, Action, deck
 
 __author__ = 'Florian Wilhelm'
 __copyright__ = 'Florian Wilhelm'
@@ -65,6 +65,36 @@ class Game(object):
         self._players = []
         self._dealer = None
         self._rounds = []
+        self._pocketCards = None
+        self._boardCards = []
+        self._smallBlind = None
+
+    @property
+    def smallBlind(self):
+        return self._smallBlind
+
+    @smallBlind.setter
+    def smallBlind(self, value):
+        self._smallBlind = value
+
+    @property
+    def pocketCards(self):
+        return self._pocketCards
+
+    @pocketCards.setter
+    def pocketCards(self, cards):
+        assert len(cards) == 2
+        for card in cards:
+            assert card in deck
+        self._pocketCards = cards
+
+    @property
+    def dealer(self):
+        return self._dealer
+
+    @dealer.setter
+    def dealer(self, playerId):
+        self._dealer = self.getPlayer(playerId)
 
     @property
     def players(self):

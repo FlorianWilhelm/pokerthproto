@@ -13,7 +13,7 @@ __copyright__ = 'Florian Wilhelm'
 
 class PyClientProtocol(ClientProtocol):
     def insideLobby(self):
-        self.joinGame('PyClient Game')
+        self.joinGame('My Online Game')
 
     def joinGame(self, gameName):
         try:
