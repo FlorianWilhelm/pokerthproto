@@ -36,10 +36,22 @@ class RoundInfo(object):
     :param cards: board card of the round as defined in :data:`deck`
     """
 
-    def __init__(self, name, cards=None, actions=None):
-        self.name = name
-        self.cards = cards if cards else list()
-        self.actions = actions if actions else list()
+    def __init__(self, name, cards=None):
+        self._name = name
+        self._cards = cards if cards else []
+        self._actions = []
+
+    @property
+    def actions(self):
+        return self._actions
+
+    @property
+    def name(self):
+        return self._name
+
+    @property
+    def cards(self):
+        return self._cards
 
     def __eq__(self, other):
         if isinstance(other, RoundInfo):
@@ -68,14 +80,46 @@ class Game(object):
         self._pocketCards = None
         self._boardCards = []
         self._smallBlind = None
+        self._highestSet = 0
+        self._minimumRaise = 0
+        self._handsPlayed = 0
+
+    @property
+    def seats(self):
+        seats = sorted([(p.seat, p) for p in self.players])
+        return [p for _, p in seats]
+
+    @property
+    def handsPlayed(self):
+        return self._handsPlayed
+
+    @property
+    def minimumRaise(self):
+        return self._minimumRaise
+
+    @minimumRaise.setter
+    def minimumRaise(self, chips):
+        self._minimumRaise = chips
+
+    @property
+    def highestSet(self):
+        return self._highestSet
+
+    @highestSet.setter
+    def highestSet(self, chips):
+        self._highestSet = chips
 
     @property
     def smallBlind(self):
         return self._smallBlind
 
     @smallBlind.setter
-    def smallBlind(self, value):
-        self._smallBlind = value
+    def smallBlind(self, chips):
+        self._smallBlind = chips
+
+    @property
+    def bigBlind(self):
+        return 2*self._smallBlind
 
     @property
     def pocketCards(self):
@@ -93,8 +137,8 @@ class Game(object):
         return self._dealer
 
     @dealer.setter
-    def dealer(self, playerId):
-        self._dealer = self.getPlayer(playerId)
+    def dealer(self, player):
+        self._dealer = player
 
     @property
     def players(self):
@@ -105,7 +149,7 @@ class Game(object):
             self._players.append(player)
         else:
             raise GameError("Player with id {} already listed".format(
-                player.id))
+                player.playerId))
 
     def delPlayer(self, player):
         self._players.remove(player)
@@ -117,7 +161,7 @@ class Game(object):
         :param name: id of the player
         :return: player
         """
-        player = [p for p in self._players if p.id == id]
+        player = [p for p in self._players if p.playerId == id]
         if len(player) == 1:
             return player[0]
         else:
@@ -158,9 +202,9 @@ class Game(object):
         elif position == len(self._rounds):
             poker_round = RoundInfo(name=name, cards=cards)
             self._rounds.append(poker_round)
+            self._highestSet = 0
         elif position > len(self._rounds):
-            raise GameError("Trying to add a poker round at wrong "
-                                 "position.")
+            raise GameError("Trying to add a poker round at wrong position.")
 
     @property
     def currRound(self):
@@ -175,6 +219,7 @@ class Game(object):
         else:
             raise GameError("No poker round available.")
 
+    # TODO: Check if this function is still needed
     def isBetPlaced(self):
         """
         Checks if a bet has yet been placed
@@ -184,8 +229,8 @@ class Game(object):
         """
         round_name = self.currRound.name
         if round_name == Round.SMALL_BLIND or round_name == Round.BIG_BLIND:
-            raise GameError("This function should not be called while "
-                                 "players are posting blinds.")
+            raise GameError("This function should not be called while players "
+                            "are posting blinds.")
         if round_name == Round.PREFLOP:
             return True
         for action in self.currRound.actions:
@@ -193,6 +238,7 @@ class Game(object):
                 return True
         return False
 
+    # TODO: Check if this function is still needed
     @property
     def currBet(self):
         """
@@ -202,8 +248,8 @@ class Game(object):
         """
         round_name = self.currRound.name
         if round_name == Round.SMALL_BLIND or round_name == Round.BIG_BLIND:
-            raise GameError("This function should not be called while "
-                                 "players are posting blinds.")
+            raise GameError("This function should not be called while players "
+                            "are posting blinds.")
         curr_bet = 0.
         for action in self.currRound.actions:
             chips = action.chips
@@ -234,7 +280,7 @@ class Game(object):
         """
         if not self.existPlayer(playerId):
             raise GameError("Adding an action of player wiht id {} that "
-                                 "is not in game.".format(playerId))
+                            "is not in game.".format(playerId))
         player = self.getPlayer(playerId)
         action = ActionInfo(player=player, kind=kind, chips=chips)
         self.currRound.actions.append(action)
@@ -259,3 +305,9 @@ class Game(object):
             player = self.getPlayer(playerId)
             actions = [action for action in actions if action.player == player]
         return actions
+
+    def startNewHand(self):
+        self._rounds = [RoundInfo(name=Round.SMALL_BLIND)]
+        if self._handsPlayed > 0:  # move dealer button
+            dealer_seat = (self.dealer.seat + 1) % len(self.seats)
+            self.dealer = [p for p in self.players if p.seat == dealer_seat][0]

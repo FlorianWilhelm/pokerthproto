@@ -37,10 +37,3 @@ def test_pack_unpack(initMsgData):
     assert isinstance(envelope, PokerTHMessage)
     data = message.pack(envelope)
     assert data == initMsgData
-
-
-def test_packEnvelop(initMsgData):
-    init_msg = message.unpack(initMsgData).initMessage
-    data = message.packEnvelop(init_msg)
-    assert data == initMsgData
-

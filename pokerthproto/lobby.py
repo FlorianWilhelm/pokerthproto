@@ -219,7 +219,7 @@ class Lobby(object):
         self._players.remove(player)
 
     def getPlayer(self, playerId):
-        players = [p for p in self._players if p.id == playerId]
+        players = [p for p in self._players if p.playerId == playerId]
         if len(players) == 1:
             return players[0]
         else:

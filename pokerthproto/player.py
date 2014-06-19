@@ -11,12 +11,27 @@ class Player(object):
     Player in poker game including all information of
     :obj:`pokerth_pb2.PlayerInfoReplyMessage.playerInfoData`
     """
-    def __init__(self, id):
-        self._id = id
+    def __init__(self, playerId):
+        self._playerId = playerId
+        self._money = None
+        self._name = None
+        self._seat = None
+        self._isHuman = None
+        self._playerRights = None
+        self._avatarType = None
+        self._avatarHash = None
 
     @property
-    def id(self):
-        return self._id
+    def money(self):
+        return self._money
+
+    @money.setter
+    def money(self, chips):
+        self._money = chips
+
+    @property
+    def playerId(self):
+        return self._playerId
 
     @property
     def name(self):
@@ -55,5 +70,5 @@ class Player(object):
 
     def __eq__(self, other):
         if isinstance(other, Player):
-            return self.id == other.id
+            return self.playerId == other.playerId
         return NotImplemented

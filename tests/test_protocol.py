@@ -24,7 +24,7 @@ log.startLogging(sys.stdout)
 def test_lobby(pokerth_server):
     class PyClientProtocol(protocol.ClientProtocol):
 
-        def insideLobby(self):
+        def handleInsideLobby(self):
             pass
 
     class PyClientProtocolFactory(protocol.ClientProtocolFactory):
@@ -47,7 +47,7 @@ def test_lobby(pokerth_server):
 def test_players(pokerth_server):
     class PyClientProtocol(protocol.ClientProtocol):
 
-        def insideLobby(self):
+        def handleInsideLobby(self):
             pass
 
     class PyClientProtocolFactory(protocol.ClientProtocolFactory):
@@ -70,9 +70,9 @@ def test_players(pokerth_server):
 def test_create_game(pokerth_server):
     class PyClientProtocol(protocol.ClientProtocol):
 
-        def insideLobby(self):
+        def handleInsideLobby(self):
             gameInfo = lobby.GameInfo('PyClient Game')
-            self.sendJoinNewGameMessage(gameInfo)
+            self.sendJoinNewGame(gameInfo)
 
     class PyClientProtocolFactory(protocol.ClientProtocolFactory):
         protocol = PyClientProtocol
@@ -94,19 +94,19 @@ def test_create_game(pokerth_server):
 def test_two_players_in_lobby(pokerth_server):
     class PyClient1Protocol(protocol.ClientProtocol):
 
-        def insideLobby(self):
+        def handleInsideLobby(self):
             try:
                 gameId = self.factory.lobby.getGameInfoId('PyClient Game')
             except lobby.LobbyError:
-                reactor.callLater(1, self.insideLobby)
+                reactor.callLater(1, self.handleInsideLobby)
             else:
-                self.sendJoinExistingGameMessage(gameId)
+                self.sendJoinExistingGame(gameId)
 
     class PyClient2Protocol(protocol.ClientProtocol):
 
-        def insideLobby(self):
+        def handleInsideLobby(self):
             gameInfo = lobby.GameInfo('PyClient Game')
-            self.sendJoinNewGameMessage(gameInfo)
+            self.sendJoinNewGame(gameInfo)
 
     class PyClient1ProtocolFactory(protocol.ClientProtocolFactory):
         protocol = PyClient1Protocol

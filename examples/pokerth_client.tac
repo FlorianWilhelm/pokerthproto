@@ -12,7 +12,7 @@ __copyright__ = 'Florian Wilhelm'
 
 
 class PyClientProtocol(ClientProtocol):
-    def insideLobby(self):
+    def handleInsideLobby(self):
         self.joinGame('My Online Game')
 
     def joinGame(self, gameName):
@@ -21,11 +21,14 @@ class PyClientProtocol(ClientProtocol):
         except LobbyError:
             reactor.callLater(1, self.joinGame, gameName)
         else:
-            self.sendJoinExistingGameMessage(gameId)
+            self.sendJoinExistingGame(gameId)
+
+    def handleMyTurn(self, round):
+        print("my Turn")
 
     def createGame(self):
         gameInfo = GameInfo('PyClient Game')
-        self.sendJoinNewGameMessage(gameInfo)
+        self.sendJoinNewGame(gameInfo)
 
 
 class PyClientProtocolFactory(ClientProtocolFactory):
