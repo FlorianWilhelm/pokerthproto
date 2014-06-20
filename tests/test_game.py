@@ -21,7 +21,7 @@ def test_rounds():
         pgame.addRound(poker.Round.SMALL_BLIND)
     assert pgame.existRound(poker.Round.SMALL_BLIND)
     assert not pgame.existRound(poker.Round.RIVER)
-    assert pgame.currRound.name == poker.Round.SMALL_BLIND
+    assert pgame.currRound.gameState == poker.Round.SMALL_BLIND
     with pytest.raises(game.GameError):
         pgame.addRound(poker.Round.FLOP)
 

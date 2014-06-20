@@ -32,12 +32,13 @@ class RoundInfo(object):
     """
     Information about the poker round.
 
-    :param name: name of the poker round (:class:`Round`)
+    :param gameState: name of the poker round (:class:`Round`)
     :param cards: board card of the round as defined in :data:`deck`
     """
 
-    def __init__(self, name, cards=None):
-        self._name = name
+    def __init__(self, gameState, cards=None):
+        assert gameState in poker_rounds
+        self._gameState = gameState
         self._cards = cards if cards else []
         self._actions = []
 
@@ -46,8 +47,16 @@ class RoundInfo(object):
         return self._actions
 
     @property
+    def gameState(self):
+        return self._gameState
+
+    @property
     def name(self):
-        return self._name
+        for attr, value in vars(Round):
+            if attr.startswith("__"):
+                continue
+            if value == self._gameState:
+                return attr
 
     @property
     def cards(self):
@@ -80,9 +89,14 @@ class Game(object):
         self._pocketCards = None
         self._boardCards = []
         self._smallBlind = None
+        self._myBet = 0
         self._highestSet = 0
         self._minimumRaise = 0
-        self._handsPlayed = 0
+        self._handNum = 1
+
+    @property
+    def myBet(self):
+        return self._myBet
 
     @property
     def seats(self):
@@ -90,8 +104,8 @@ class Game(object):
         return [p for _, p in seats]
 
     @property
-    def handsPlayed(self):
-        return self._handsPlayed
+    def handNum(self):
+        return self._handNum
 
     @property
     def minimumRaise(self):
@@ -200,7 +214,7 @@ class Game(object):
         if position < len(self._rounds):
             raise GameError("Poker round exists already.")
         elif position == len(self._rounds):
-            poker_round = RoundInfo(name=name, cards=cards)
+            poker_round = RoundInfo(gameState=name, cards=cards)
             self._rounds.append(poker_round)
             self._highestSet = 0
         elif position > len(self._rounds):
@@ -227,11 +241,11 @@ class Game(object):
         :return: test if bet is placed
         :rtype: :obj:`bool`
         """
-        round_name = self.currRound.name
-        if round_name == Round.SMALL_BLIND or round_name == Round.BIG_BLIND:
+        round = self.currRound.gameState
+        if round == Round.SMALL_BLIND or round == Round.BIG_BLIND:
             raise GameError("This function should not be called while players "
                             "are posting blinds.")
-        if round_name == Round.PREFLOP:
+        if round == Round.PREFLOP:
             return True
         for action in self.currRound.actions:
             if action.kind == Action.BET:
@@ -246,8 +260,8 @@ class Game(object):
 
         :return: current bet
         """
-        round_name = self.currRound.name
-        if round_name == Round.SMALL_BLIND or round_name == Round.BIG_BLIND:
+        round = self.currRound.gameState
+        if round == Round.SMALL_BLIND or round == Round.BIG_BLIND:
             raise GameError("This function should not be called while players "
                             "are posting blinds.")
         curr_bet = 0.
@@ -307,7 +321,8 @@ class Game(object):
         return actions
 
     def startNewHand(self):
-        self._rounds = [RoundInfo(name=Round.SMALL_BLIND)]
-        if self._handsPlayed > 0:  # move dealer button
+        self._rounds = [RoundInfo(gameState=Round.SMALL_BLIND)]
+        if self._handNum > 1:  # move dealer button
             dealer_seat = (self.dealer.seat + 1) % len(self.seats)
             self.dealer = [p for p in self.players if p.seat == dealer_seat][0]
+        self._handNum += 1

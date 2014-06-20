@@ -260,7 +260,7 @@ class ClientProtocol(PokerTHProtocol):
         log.msg("PlayersActionDoneMessage received")
         game = self.factory.game
         assert game.gameId == msg.gameId
-        if msg.gameState != game.currRound.name:
+        if msg.gameState != game.currRound.gameState:
             # TODO: Add board cards somehow
             game.addRound(msg.gameState)
         game.addAction(msg.playerId, msg.playerAction, msg.totalPlayerBet)
@@ -274,15 +274,37 @@ class ClientProtocol(PokerTHProtocol):
         game = self.factory.game
         assert game.gameId == msg.gameId
         if msg.playerId == self.factory.playerId:
-            self.handleMyTurn(msg.gameState)
+            action, bet = self.handleMyTurn(game)
+            reply = pokerth_pb2.MyActionRequestMessage()
+            reply.myAction = action
+            reply.myRelativeBet = bet
+            reply.gameId = game.gameId
+            reply.handNum = game.handNum
+            reply.gameState = game.currRound.gameState
+            self._sendMessage(reply)
         else:
-            self.handleOthersTurn(msg.playerId, msg.gameState)
+            self.handleOthersTurn(msg.playerId, game)
 
-    def handleOthersTurn(self, playerId, round):
-        player = self.factory.game.getPlayer(playerId)
+    def yourActionRejected(self, msg):
+        log.msg("YourActionRejectedMessage received")
+        print("Unhandled", msg)
+        # gameId: 1
+        # gameState: netStatePreflop
+        # yourAction: netActionCall
+        # yourRelativeBet: 0
+        # rejectionReason: rejectedActionNotAllowed
+
+    def handleOthersTurn(self, playerId, game):
+        player = game.getPlayer(playerId)
         log.msg("Turn of player {}".format(player.name))
 
     def handleMyTurn(self, round):
+        """
+        Decide what action to take when it is our turn.
+
+        :param game: game information (:obj:`game.Game`)
+        :return: (action, bet) tuple (:obj:`poker.Action`, :obj:`int`)
+        """
         raise NotImplementedError("What action should I take?")
 
 

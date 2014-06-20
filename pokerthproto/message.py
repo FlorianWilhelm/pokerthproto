@@ -100,13 +100,3 @@ def envelop(msg):
     msg_type = getattr(envelope, _getMsgTypeAttr(msg_name))
     setattr(envelope, 'messageType', msg_type)
     return envelope
-
-
-def packEnvelop(msg):
-    """
-    Convenience function for pack and envelop.
-
-    :param msg: message object
-    :return: data message as string
-    """
-    return pack(envelop(msg))

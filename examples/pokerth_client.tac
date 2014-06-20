@@ -6,6 +6,7 @@ from twisted.application import internet, service
 from twisted.internet import reactor
 from pokerthproto.protocol import ClientProtocolFactory, ClientProtocol
 from pokerthproto.lobby import GameInfo, LobbyError
+from pokerthproto.poker import Action
 
 __author__ = 'Florian Wilhelm'
 __copyright__ = 'Florian Wilhelm'
@@ -23,8 +24,13 @@ class PyClientProtocol(ClientProtocol):
         else:
             self.sendJoinExistingGame(gameId)
 
-    def handleMyTurn(self, round):
-        print("my Turn")
+    def handleMyTurn(self, game):
+        print("Yeah, my turn!")
+        if game.highestSet:
+            action = Action.CALL
+        else:
+            action = Action.CHECK
+        return action, game.highestSet
 
     def createGame(self):
         gameInfo = GameInfo('PyClient Game')
