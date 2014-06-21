@@ -30,10 +30,25 @@ A simple proxy server for PokerTH to inspect the data exchange between client
 and server. To use it, run the PokerTH server locally (``pokerth_server``)
 and then start the twisted application::
 
-    twisted -y pokerth_proxy.tac -n
+    ./start_proxy.sh
 
 Now run the graphical pokerth client and in *Settings* under the tab
 *Internet Game* check *Manual Server Configuration*, choose ``localhost`` as
 *Server Address* and ``1234`` as *Server Port* and confirm with *OK*.
 Click now *Internet Game* to connect to your local *PokerTH* server and watch
 *twisted* logging all messages.
+
+Simple bot
+----------
+
+A stupid little poker bot that only checks or calls. With a running PokerTH
+server run::
+
+    ./start_client.sh
+
+Then login with the PokerTH GUI and create a game "My Online Game", wait for
+the bot to join your game and click ``Start Game``.
+
+.. warning::
+
+    Don't get to excited if your are winning ;-)

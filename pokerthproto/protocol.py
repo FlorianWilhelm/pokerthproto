@@ -168,7 +168,7 @@ class ClientProtocol(PokerTHProtocol):
 
     def joinGameAckReceived(self, msg):
         log.msg("JoinGameAckMessage received")
-        self.factory.game = game.Game(msg.gameId)
+        self.factory.game = game.Game(msg.gameId, self.factory.playerId)
         if msg.areYouGameAdmin:
             myGameInfo = self.factory.lobby.getGameInfo(msg.gameId)
             assert myGameInfo.adminPlayerId == self.factory.playerId
@@ -260,9 +260,9 @@ class ClientProtocol(PokerTHProtocol):
         log.msg("PlayersActionDoneMessage received")
         game = self.factory.game
         assert game.gameId == msg.gameId
-        if msg.gameState != game.currRound.gameState:
-            # TODO: Add board cards somehow
-            game.addRound(msg.gameState)
+        round = msg.gameState
+        if round != game.currRound and round in poker.poker_rounds[:2]:
+            game.addRound(round)
         game.addAction(msg.playerId, msg.playerAction, msg.totalPlayerBet)
         game.highestSet = msg.highestSet
         game.minimumRaise = msg.minimumRaise
@@ -273,32 +273,32 @@ class ClientProtocol(PokerTHProtocol):
         log.msg("PlayersTurnMessage received")
         game = self.factory.game
         assert game.gameId == msg.gameId
+        # First real turn of a player triggers Preflop
+        if game.currRound in poker.poker_rounds[:2]:
+            game.addRound(poker.Round.PREFLOP)
         if msg.playerId == self.factory.playerId:
             action, bet = self.handleMyTurn(game)
+            # make absolut bet relative
+            bet -= game.highestSet
             reply = pokerth_pb2.MyActionRequestMessage()
             reply.myAction = action
             reply.myRelativeBet = bet
             reply.gameId = game.gameId
             reply.handNum = game.handNum
-            reply.gameState = game.currRound.gameState
+            reply.gameState = game.currRound
             self._sendMessage(reply)
         else:
             self.handleOthersTurn(msg.playerId, game)
 
     def yourActionRejected(self, msg):
         log.msg("YourActionRejectedMessage received")
-        print("Unhandled", msg)
-        # gameId: 1
-        # gameState: netStatePreflop
-        # yourAction: netActionCall
-        # yourRelativeBet: 0
-        # rejectionReason: rejectedActionNotAllowed
+        raise RuntimeError("Wrong action taken:\n{}".format(msg))
 
     def handleOthersTurn(self, playerId, game):
         player = game.getPlayer(playerId)
         log.msg("Turn of player {}".format(player.name))
 
-    def handleMyTurn(self, round):
+    def handleMyTurn(self, game):
         """
         Decide what action to take when it is our turn.
 
@@ -306,6 +306,35 @@ class ClientProtocol(PokerTHProtocol):
         :return: (action, bet) tuple (:obj:`poker.Action`, :obj:`int`)
         """
         raise NotImplementedError("What action should I take?")
+
+    def dealFlopCardsReceived(self, msg):
+        log.msg("DealFlopCardsMessage received")
+        game = self.factory.game
+        assert game.gameId == msg.gameId
+        assert game.currRound == poker.Round.PREFLOP
+        card1 = poker.intToCard(msg.flopCard1)
+        card2 = poker.intToCard(msg.flopCard2)
+        card3 = poker.intToCard(msg.flopCard3)
+        game.addRound(poker.Round.FLOP, cards=[card1, card2, card3])
+        game.highestSet = 0
+
+    def dealTurnCardReceived(self, msg):
+        log.msg("DealTurnCardsMessage received")
+        game = self.factory.game
+        assert game.gameId == msg.gameId
+        assert game.currRound == poker.Round.FLOP
+        card = poker.intToCard(msg.turnCard)
+        game.addRound(poker.Round.TURN, cards=[card])
+        game.highestSet = 0
+
+    def dealRiverCardReceived(self, msg):
+        log.msg("DealRiverCardsMessage received")
+        game = self.factory.game
+        assert game.gameId == msg.gameId
+        assert game.currRound == poker.Round.TURN
+        card = poker.intToCard(msg.riverCard)
+        game.addRound(poker.Round.RIVER, cards=[card])
+        game.highestSet = 0
 
 
 class ClientProtocolFactory(ClientFactory):

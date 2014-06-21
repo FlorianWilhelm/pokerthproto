@@ -13,54 +13,21 @@ __copyright__ = 'Florian Wilhelm'
 
 
 def test_rounds():
-    pgame = game.Game(1)
+    pgame = game.Game(1, 1)
     with pytest.raises(game.GameError):
-        pgame.currRound()
+        pgame.currRoundInfo()
     pgame.addRound(game.Round.SMALL_BLIND)
     with pytest.raises(game.GameError):
         pgame.addRound(poker.Round.SMALL_BLIND)
     assert pgame.existRound(poker.Round.SMALL_BLIND)
     assert not pgame.existRound(poker.Round.RIVER)
-    assert pgame.currRound.gameState == poker.Round.SMALL_BLIND
+    assert pgame.currRound == poker.Round.SMALL_BLIND
     with pytest.raises(game.GameError):
         pgame.addRound(poker.Round.FLOP)
 
 
-def test_isBetPlaced():
-    pgame = game.Game(1)
-    pgame.addRound(poker.Round.SMALL_BLIND)
-    with pytest.raises(game.GameError):
-        pgame.isBetPlaced()
-    pgame.addRound(poker.Round.BIG_BLIND)
-    with pytest.raises(game.GameError):
-        pgame.isBetPlaced()
-    pgame.addRound(poker.Round.PREFLOP)
-    assert pgame.isBetPlaced()
-    pgame.addRound(poker.Round.FLOP)
-    assert not pgame.isBetPlaced()
-    player1 = player.Player(1)
-    pgame.addPlayer(player1)
-    pgame.addAction(1, poker.Action.BET, 2.5)
-    assert pgame.isBetPlaced()
-
-
-def test_currBet():
-    pgame = game.Game(1)
-    pgame.addRound(poker.Round.SMALL_BLIND)
-    with pytest.raises(game.GameError):
-        pgame.currBet
-    player1 = player.Player(1)
-    pgame.addPlayer(player1)
-    pgame.addRound(poker.Round.BIG_BLIND)
-    with pytest.raises(game.GameError):
-        pgame.currBet
-    pgame.addRound(poker.Round.PREFLOP)
-    pgame.addAction(1, poker.Action.BET, 1.0)
-    assert pgame.currBet == 1.0
-
-
 def test_players():
-    pgame = game.Game(1)
+    pgame = game.Game(1, 1)
     player1 = player.Player(1)
     pgame.addPlayer(player1)
     assert pgame.existPlayer(1)
@@ -73,7 +40,7 @@ def test_players():
 
 
 def test_actions():
-    pgame = game.Game(1)
+    pgame = game.Game(1, 1)
     player1 = player.Player(1)
     pgame.addPlayer(player1)
     player2 = player.Player(2)

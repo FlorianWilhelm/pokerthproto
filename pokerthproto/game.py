@@ -14,18 +14,27 @@ class ActionInfo(object):
 
     :param player: player (:class:`Player`)
     :param kind: type of the action (:class:`Action`)
-    :param chips: stake of the action if available
+    :param money: stake of the action if available
     """
 
-    def __init__(self, player, kind, chips=None):
+    def __init__(self, player, kind, money=None):
         self.player = player
         self.kind = kind
-        self.chips = chips
+        self.money = money
 
     def __eq__(self, other):
         if isinstance(other, ActionInfo):
             return self.__dict__ == other.__dict__
         return NotImplemented
+
+    def __unicode__(self):
+        content = "Player: {}, kind: {}, money: {}".format(self.player,
+                                                           self.kind,
+                                                           self.money)
+        return unicode(content)
+
+    def __str__(self):
+        return unicode(self).encode('utf-8')
 
 
 class RoundInfo(object):
@@ -67,6 +76,15 @@ class RoundInfo(object):
             return self.__dict__ == other.__dict__
         return NotImplemented
 
+    def __unicode__(self):
+        content = {'GameState': self._gameState,
+                   'Cards': self._cards,
+                   'Actions': str(self._actions)}
+        return unicode(content)
+
+    def __str__(self):
+        return unicode(self).encode('utf-8')
+
 
 class GameError(Exception):
 
@@ -81,22 +99,18 @@ class Game(object):
     """
     A poker game holding the information about the actions of the players.
     """
-    def __init__(self, gameId):
+    def __init__(self, gameId, myPlayerId):
         self._gameId = gameId
+        self._myPlayerId = myPlayerId
         self._players = []
         self._dealer = None
         self._rounds = []
         self._pocketCards = None
         self._boardCards = []
         self._smallBlind = None
-        self._myBet = 0
         self._highestSet = 0
         self._minimumRaise = 0
         self._handNum = 1
-
-    @property
-    def myBet(self):
-        return self._myBet
 
     @property
     def seats(self):
@@ -112,24 +126,24 @@ class Game(object):
         return self._minimumRaise
 
     @minimumRaise.setter
-    def minimumRaise(self, chips):
-        self._minimumRaise = chips
+    def minimumRaise(self, money):
+        self._minimumRaise = money
 
     @property
     def highestSet(self):
         return self._highestSet
 
     @highestSet.setter
-    def highestSet(self, chips):
-        self._highestSet = chips
+    def highestSet(self, money):
+        self._highestSet = money
 
     @property
     def smallBlind(self):
         return self._smallBlind
 
     @smallBlind.setter
-    def smallBlind(self, chips):
-        self._smallBlind = chips
+    def smallBlind(self, money):
+        self._smallBlind = money
 
     @property
     def bigBlind(self):
@@ -216,12 +230,11 @@ class Game(object):
         elif position == len(self._rounds):
             poker_round = RoundInfo(gameState=name, cards=cards)
             self._rounds.append(poker_round)
-            self._highestSet = 0
         elif position > len(self._rounds):
             raise GameError("Trying to add a poker round at wrong position.")
 
     @property
-    def currRound(self):
+    def currRoundInfo(self):
         """
         Current poker round
 
@@ -233,43 +246,9 @@ class Game(object):
         else:
             raise GameError("No poker round available.")
 
-    # TODO: Check if this function is still needed
-    def isBetPlaced(self):
-        """
-        Checks if a bet has yet been placed
-
-        :return: test if bet is placed
-        :rtype: :obj:`bool`
-        """
-        round = self.currRound.gameState
-        if round == Round.SMALL_BLIND or round == Round.BIG_BLIND:
-            raise GameError("This function should not be called while players "
-                            "are posting blinds.")
-        if round == Round.PREFLOP:
-            return True
-        for action in self.currRound.actions:
-            if action.kind == Action.BET:
-                return True
-        return False
-
-    # TODO: Check if this function is still needed
     @property
-    def currBet(self):
-        """
-        The current bet if available
-
-        :return: current bet
-        """
-        round = self.currRound.gameState
-        if round == Round.SMALL_BLIND or round == Round.BIG_BLIND:
-            raise GameError("This function should not be called while players "
-                            "are posting blinds.")
-        curr_bet = 0.
-        for action in self.currRound.actions:
-            chips = action.chips
-            if chips is not None:
-                curr_bet = max(curr_bet, chips)
-        return curr_bet
+    def currRound(self):
+        return self.currRoundInfo.gameState
 
     def existPlayer(self, id):
         """
@@ -284,20 +263,20 @@ class Game(object):
             return False
         return True
 
-    def addAction(self, playerId, kind, chips=None):
+    def addAction(self, playerId, kind, money=None):
         """
         Adds an action to the current round of the game
 
         :param playerId: id of player
         :param kind: type of the action of :class:`Action`
-        :param chips: stake of the action if availPlayerIdable
+        :param money: stake of the action if availPlayerIdable
         """
         if not self.existPlayer(playerId):
             raise GameError("Adding an action of player wiht id {} that "
                             "is not in game.".format(playerId))
         player = self.getPlayer(playerId)
-        action = ActionInfo(player=player, kind=kind, chips=chips)
-        self.currRound.actions.append(action)
+        action = ActionInfo(player=player, kind=kind, money=money)
+        self.currRoundInfo.actions.append(action)
 
     def getActions(self, playerId=None, rounds=None):
         """
@@ -312,13 +291,25 @@ class Game(object):
             rounds = [poker_rounds.index(round) for round in rounds]
         else:
             rounds = range(len(self._rounds))
-        actions = list()
+        actions = []
         for poker_round in rounds:
             actions.extend(self._rounds[poker_round].actions)
         if playerId is not None:
             player = self.getPlayer(playerId)
             actions = [action for action in actions if action.player == player]
         return actions
+
+    @property
+    def myBet(self):
+        if self.currRound == Round.PREFLOP:
+            rounds = poker_rounds[:3]
+        else:
+            rounds = [self.currRound]
+        myActions = self.getActions(self._myPlayerId, rounds=rounds)
+        if myActions:
+            return myActions[-1].money
+        else:
+            return 0
 
     def startNewHand(self):
         self._rounds = [RoundInfo(gameState=Round.SMALL_BLIND)]

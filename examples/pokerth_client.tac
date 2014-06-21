@@ -26,8 +26,8 @@ class PyClientProtocol(ClientProtocol):
 
     def handleMyTurn(self, game):
         print("Yeah, my turn!")
-        if game.highestSet:
-            action = Action.CALL
+        if game.highestSet > game.myBet:
+            action, bet = Action.CALL, game.highestSet
         else:
             action = Action.CHECK
         return action, game.highestSet

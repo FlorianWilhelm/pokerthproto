@@ -26,8 +26,8 @@ class Player(object):
         return self._money
 
     @money.setter
-    def money(self, chips):
-        self._money = chips
+    def money(self, money):
+        self._money = money
 
     @property
     def playerId(self):
