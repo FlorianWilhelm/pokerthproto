@@ -20,12 +20,10 @@ __location__ = os.path.join(os.getcwd(), os.path.dirname(
 on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
 
 if on_rtd:
-    import pip
     import subprocess
 
-    pip.main(['install', 'statsmodels'])
     output_dir = os.path.join(__location__, "../docs/_rst")
-    module_dir = os.path.join(__location__, "../pydse")
+    module_dir = os.path.join(__location__, "../pokerthproto")
     cmd_line_template = "sphinx-apidoc -f -o {outputdir} {moduledir}"
     cmd_line = cmd_line_template.format(outputdir=output_dir,
                                         moduledir=module_dir)
