@@ -47,8 +47,5 @@ server run::
     ./start_client.sh
 
 Then login with the PokerTH GUI and create a game "My Online Game", wait for
-the bot to join your game and click ``Start Game``.
-
-.. warning::
-
-    Don't get to excited if your are winning ;-)
+the bot to join your game and click ``Start Game``. Don't get too excited if
+your are winning ;-)

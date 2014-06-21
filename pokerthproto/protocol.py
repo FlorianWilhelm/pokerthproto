@@ -278,11 +278,9 @@ class ClientProtocol(PokerTHProtocol):
             game.addRound(poker.Round.PREFLOP)
         if msg.playerId == self.factory.playerId:
             action, bet = self.handleMyTurn(game)
-            # make absolut bet relative
-            bet -= game.highestSet
             reply = pokerth_pb2.MyActionRequestMessage()
             reply.myAction = action
-            reply.myRelativeBet = bet
+            reply.myRelativeBet = bet - game.highestSet
             reply.gameId = game.gameId
             reply.handNum = game.handNum
             reply.gameState = game.currRound
