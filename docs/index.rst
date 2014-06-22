@@ -17,7 +17,8 @@ Contents
 .. toctree::
    :maxdepth: 2
 
-   Status <status>
+   Writting a Client <client>
+   Status of Implementation <status>
    Module Reference <_rst/modules>
 
 

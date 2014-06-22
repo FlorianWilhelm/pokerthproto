@@ -1,10 +1,10 @@
-======
-Status
-======
+========================
+Status of Implementation
+========================
 
-The PokerTH protocol consists of 81 different messages which are all enveloped
-inside an ``PokerTHMessage``. Only a subset of all messages is needed in most
-cases.
+The PokerTH protocol consists of 81 different messages types which are all
+enveloped inside an ``PokerTHMessage``. Only a subset of all messages is needed
+in most cases.
 
 Implemented
 ===========
