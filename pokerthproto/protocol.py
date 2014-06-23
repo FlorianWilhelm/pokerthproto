@@ -10,7 +10,7 @@ from twisted.python import log
 from twisted.internet.protocol import Protocol, ClientFactory
 
 from . import pokerth_pb2
-from . import message
+from . import transport
 from . import lobby
 from . import game
 from . import poker
@@ -26,7 +26,7 @@ class PokerTHProtocol(Protocol):
         while True:
             if self._msgSize is None:
                 if len(self._buffer) >= 4:
-                    self._msgSize = message.readSizeBytes(self._buffer[:4])
+                    self._msgSize = transport.readSizeBytes(self._buffer[:4])
                     self._buffer = self._buffer[4:]
                 else:
                     break
@@ -52,13 +52,13 @@ class PokerTHProtocol(Protocol):
 
     def dataReceived(self, data):
         for buffer in self._getBufferedData(data):
-            msg = message.develop(message.unpack(buffer))
+            msg = transport.develop(transport.unpack(buffer))
             hook = self._getHook(msg.__class__.__name__)
             getattr(self, hook)(msg)
 
     def _sendMessage(self, msg):
-        envelope = message.envelop(msg)
-        self.transport.write(message.pack(envelope))
+        envelope = transport.envelop(msg)
+        self.transport.write(transport.pack(envelope))
 
     def connectionLost(self, reason):
         log.msg('Connection lost due to: {}'.format(reason))

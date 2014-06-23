@@ -7,7 +7,7 @@ from twisted.python import log
 from twisted.internet.protocol import Factory
 from twisted.internet.endpoints import TCP4ClientEndpoint
 
-from . import message
+from . import transport
 from . import protocol
 
 __author__ = 'Florian Wilhelm'
@@ -31,7 +31,7 @@ class ProxyProtocol(protocol.PokerTHProtocol):
 
     def dataReceived(self, data):
         for buffer in self._getBufferedData(data):
-            msg = message.develop(message.unpack(buffer))
+            msg = transport.develop(transport.unpack(buffer))
             log.msg("{} from client:\n{}".format(msg.__class__.__name__, msg))
         self.client_proto.transport.write(data)
 
@@ -44,7 +44,7 @@ class ClientProtocol(protocol.PokerTHProtocol):
 
     def dataReceived(self, data):
         for buffer in self._getBufferedData(data):
-            msg = message.develop(message.unpack(buffer))
+            msg = transport.develop(transport.unpack(buffer))
             log.msg("{} from server:\n{}".format(msg.__class__.__name__, msg))
         self.factory.sendToClient(data)
 
