@@ -110,8 +110,12 @@ class ClientProtocol(PokerTHProtocol):
         self.state = States.LOBBY
         reactor.callLater(1, self.handleInsideLobby)
 
-    # Overwrite this function in subclass
     def handleInsideLobby(self):
+        """
+        Handle the behavior of our client in the lobby.
+
+        Overwrite this method.
+        """
         raise NotImplementedError("We are in the lobby, implement an action!")
 
     def sendJoinExistingGame(self, gameId, autoLeave=False):
@@ -219,8 +223,18 @@ class ClientProtocol(PokerTHProtocol):
         self._sendMessage(msg)
         log.msg("ChatRequestMessage sent")
 
-    # Overwrite this function in subclass
     def handleChat(self, chatType, text, gameId=None, playerId=None):
+        """
+        Handle the behavior of our client when a chat message was received.
+
+        Overwrite this method.
+
+        :param chatType:
+        :param text:
+        :param gameId:
+        :param playerId:
+        :return:
+        """
         type = chatType.replace('chatType', '')
         log_str = ''
         if gameId is not None:
@@ -277,16 +291,28 @@ class ClientProtocol(PokerTHProtocol):
         if game.currRound in poker.poker_rounds[:2]:
             game.addRound(poker.Round.PREFLOP)
         if msg.playerId == self.factory.playerId:
-            action, bet = self.handleMyTurn(game)
-            reply = pokerth_pb2.MyActionRequestMessage()
-            reply.myAction = action
-            reply.myRelativeBet = bet - game.highestSet
-            reply.gameId = game.gameId
-            reply.handNum = game.handNum
-            reply.gameState = game.currRound
-            self._sendMessage(reply)
+            self.handleMyTurn(game)
         else:
             self.handleOthersTurn(msg.playerId, game)
+
+    def sendMyAction(self, action, bet, relative=True):
+        """
+        Send my action during a poker game.
+
+        :param action: action of :obj:`~.poker.Action`
+        :param bet: bet with respect to the action
+        :param relative: boolean if the bet is relative to the highest set bet
+        """
+        game = self.factory.game
+        msg = pokerth_pb2.MyActionRequestMessage()
+        msg.myAction = action
+        if not relative:
+            bet -= game.highestSet
+        msg.myRelativeBet = bet
+        msg.gameId = game.gameId
+        msg.handNum = game.handNum
+        msg.gameState = game.currRound
+        self._sendMessage(msg)
 
     def yourActionRejected(self, msg):
         log.msg("YourActionRejectedMessage received")

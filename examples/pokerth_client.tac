@@ -30,7 +30,7 @@ class PyClientProtocol(ClientProtocol):
             action, bet = Action.CALL, game.highestSet
         else:
             action = Action.CHECK
-        return action, game.highestSet
+        self.sendMyAction(action, game.highestSet - game.myBet)
 
     def createGame(self):
         gameInfo = GameInfo('PyClient Game')
