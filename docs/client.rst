@@ -24,27 +24,27 @@ This basic ``my_client.tac`` file gives you an idea::
     from pokerthproto.lobby import GameInfo, LobbyError
     from pokerthproto.poker import Action
 
-    class PyClientProtocol(ClientProtocol):
-        def handleInsideLobby(self):
-            self.joinGame('My Online Game')
 
-        def joinGame(self, gameName):
+    class PyClientProtocol(ClientProtocol):
+        def handleInsideLobby(self, lobbyInfo):
             try:
-                gameId = self.factory.lobby.getGameInfoId(gameName)
+                gameId = self.factory.lobby.getGameInfoId('My Online Game')
             except LobbyError:
-                reactor.callLater(1, self.joinGame, gameName)
+                reactor.callLater(1, self.handleInsideLobby, lobbyInfo)
             else:
                 self.sendJoinExistingGame(gameId)
 
-        def handleMyTurn(self, game):
-            if game.highestSet > game.myBet:
-                action, bet = Action.CALL, game.highestSet
+        def handleMyTurn(self, gameInfo):
+            if gameInfo.highestSet > gameInfo.myBet:
+                action, bet = Action.CALL, gameInfo.highestSet
             else:
                 action = Action.CHECK
-            self.sendMyAction(action, game.highestSet - game.myBet)
+            self.sendMyAction(action, gameInfo.highestSet - gameInfo.myBet)
+
 
     class PyClientProtocolFactory(ClientProtocolFactory):
         protocol = PyClientProtocol
+
 
     application = service.Application('PokerTH Client')
     client_factory = PyClientProtocolFactory('PyClient1')
@@ -72,10 +72,13 @@ Your own protocol needs to define some mandatory methods:
 * :obj:`~.handleInsideLobby`: This method is called when we are inside the lobby.
   Use :obj:`~.sendJoinExistingGame` or :obj:`~.sendJoinNewGame` to
   join or create a new game. If you create a new game use :obj:`~.sendStartEvent`
-  to start the game.
+  to start the game. The ``lobbyInfo`` argument of type :obj:`~.Lobby` provides
+  you information about other players and games.
 
 * :obj:`~.handleMyTurn`: This method is called when our turn starts. Use
-  :obj:`~.sendMyAction` to decide what action you want to take.
+  :obj:`~.sendMyAction` to decide what action you want to take. The current
+  state of the game is represented with the ``gameInfo`` parameter of type
+  :obj:`~.Game` in both functions.
 
 
 Optional Methods
@@ -86,7 +89,3 @@ Optional Methods
 
 * :obj:`~.handleOthersTurn`: This method is called when another player starts
   its turn. You could use this event to chat him up.
-
-
-
-

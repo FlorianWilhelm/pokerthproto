@@ -163,6 +163,15 @@ class GameInfo(object):
     def players(self):
         return self._players
 
+    def addPlayer(self, player):
+        assert isinstance(player, Player)
+        assert player not in self._players
+        self._players.append(player)
+
+    def delPlayer(self, player):
+        assert isinstance(player, Player)
+        self._players.remove(player)
+
     @property
     def fillWithComputerPlayers(self):
         return self._fillWithComputerPlayers
@@ -244,6 +253,11 @@ class Lobby(object):
         player.setInfo(infoData)
 
     def addPlayerToGame(self, playerId, gameId):
-        game = self.getGameInfo(gameId)
+        gameInfo = self.getGameInfo(gameId)
         player = self.getPlayer(playerId)
-        game.players.append(player)
+        gameInfo.addPlayer(player)
+
+    def delPlayerFromGame(self, playerId, gameId):
+        gameInfo = self.getGameInfo(gameId)
+        player = self.getPlayer(playerId)
+        gameInfo.delPlayer(player)

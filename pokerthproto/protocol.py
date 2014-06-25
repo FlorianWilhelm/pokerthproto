@@ -5,6 +5,8 @@ from __future__ import print_function, absolute_import, division
 __author__ = 'Florian Wilhelm'
 __copyright__ = 'Florian Wilhelm'
 
+import logging
+
 from twisted.internet import reactor
 from twisted.python import log
 from twisted.internet.protocol import Protocol, ClientFactory
@@ -53,7 +55,10 @@ class PokerTHProtocol(Protocol):
     def dataReceived(self, data):
         for buffer in self._getBufferedData(data):
             msg = transport.develop(transport.unpack(buffer))
-            hook = self._getHook(msg.__class__.__name__)
+            msg_name = msg.__class__.__name__
+            hook = self._getHook(msg_name)
+            log.msg("{} received".format(msg_name))
+            #log.msg(msg, logLevel=logging.DEBUG)
             getattr(self, hook)(msg)
 
     def _sendMessage(self, msg):
@@ -85,7 +90,6 @@ class ClientProtocol(PokerTHProtocol):
     state = States.INIT
 
     def announceReceived(self, msg):
-        log.msg("AnnounceMessage received")
         reply = pokerth_pb2.InitMessage()
 
         replyVersion = reply.requestedVersion
@@ -104,17 +108,18 @@ class ClientProtocol(PokerTHProtocol):
         log.msg("InitMessage sent")
 
     def initAckReceived(self, msg):
-        log.msg("InitAckMessage received")
         self.factory.playerId = msg.yourPlayerId
         self.factory.sessionId = msg.yourSessionId
         self.state = States.LOBBY
-        reactor.callLater(1, self.handleInsideLobby)
+        reactor.callLater(1, self.handleInsideLobby, self.factory.lobby)
 
-    def handleInsideLobby(self):
+    def handleInsideLobby(self, lobbyInfo):
         """
         Handle the behavior of our client in the lobby.
 
         Overwrite this method.
+
+        :param lobbyInfo: information about the lobby (:obj:`~.Lobby`)
         """
         raise NotImplementedError("We are in the lobby, implement an action!")
 
@@ -135,7 +140,6 @@ class ClientProtocol(PokerTHProtocol):
         log.msg("JoinNewGameMessage sent")
 
     def playerListReceived(self, msg):
-        log.msg("PlayerListMessage received")
         if msg.playerListNotification == msg.playerListNew:
             self.factory.lobby.addPlayer(msg.playerId)
             reply = pokerth_pb2.PlayerInfoRequestMessage()
@@ -146,11 +150,9 @@ class ClientProtocol(PokerTHProtocol):
             self.factory.lobby.delPlayer(msg.playerId)
 
     def playerInfoReplyReceived(self, msg):
-        log.msg("PlayerInfoReplyMessage received")
         self.factory.lobby.setPlayerInfo(msg.playerId, msg.playerInfoData)
 
     def gameListNewReceived(self, msg):
-        log.msg("GameListNewMessage received")
         gameInfo = lobby.GameInfo()
         gameInfo.setInfo(msg.gameInfo)
         gameInfo.gameId = msg.gameId
@@ -160,18 +162,25 @@ class ClientProtocol(PokerTHProtocol):
         self.factory.lobby.addGameInfo(gameInfo)
 
     def gameListPlayerJoinedReceived(self, msg):
-        log.msg("GameListPlayerJoinedMessage received")
         self.factory.lobby.addPlayerToGame(msg.playerId, msg.gameId)
 
+    def gameListPlayerLeftReceived(self, msg):
+        self.factory.lobby.delPlayerFromGame(msg.playerId, msg.gameId)
+
     def gamePlayerJoinedReceived(self, msg):
-        log.msg("GamePlayerJoinedMessage received")
         game = self.factory.game
         assert game.gameId == msg.gameId
         player = self.factory.lobby.getPlayer(msg.playerId)
         game.addPlayer(player)
 
+    def gamePlayerLeftReceived(self, msg):
+        game = self.factory.game
+        assert game.gameId == msg.gameId
+        player = self.factory.lobby.getPlayer(msg.playerId)
+        # TODO: Handle GamePlayerLeftReason
+        game.delPlayer(player)
+
     def joinGameAckReceived(self, msg):
-        log.msg("JoinGameAckMessage received")
         self.factory.game = game.Game(msg.gameId, self.factory.playerId)
         if msg.areYouGameAdmin:
             myGameInfo = self.factory.lobby.getGameInfo(msg.gameId)
@@ -181,7 +190,6 @@ class ClientProtocol(PokerTHProtocol):
         self.state = States.GAME_JOINED
 
     def gameListUpdateReceived(self, msg):
-        log.msg("GameListUpdateMessage received")
         gameInfo = self.factory.lobby.getGameInfo(msg.gameId)
         gameInfo.gameMode = msg.gameMode
 
@@ -195,7 +203,6 @@ class ClientProtocol(PokerTHProtocol):
         log.msg("StartEventMessage sent")
 
     def startEventReceived(self, msg):
-        log.msg("StartEventMessage received")
         assert self.factory.game.gameId == msg.gameId
         gameInfo = self.factory.lobby.getGameInfo(msg.gameId)
         gameInfo.fillWithComputerPlayers = msg.fillWithComputerPlayers
@@ -206,14 +213,28 @@ class ClientProtocol(PokerTHProtocol):
         self.state = States.GAME_STARTED
 
     def chatReceived(self, msg):
-        log.msg("ChatMessage received")
-        chatTypes = pokerth_pb2.ChatMessage.ChatType.items()
-        chatType = [k for k, v in chatTypes if v == msg.chatType][0]
-        gameId = msg.gameId if msg.gameId != 0 else None
-        playerId = msg.playerId if msg.playerId != 0 else None
-        self.handleChat(chatType, msg.chatText, gameId, playerId)
+        chatType = enum2str(pokerth_pb2.ChatMessage.ChatType, msg.chatType)
+        chatType = chatType.replace('chatType', '')
+        lobby = self.factory.lobby
+        if msg.gameId != 0:
+            game = self.factory.game
+            assert game.gameId == msg.gameId
+        else:
+            game = None
+        if msg.playerId != 0:
+            player = lobby.getPlayer(msg.playerId)
+        else:
+            player = None
+        self.handleChat(chatType, msg.chatText, lobby, game, player)
 
     def sendChatRequest(self, text, gameId=None, playerId=None):
+        """
+        Send a chat message.
+
+        :param text: your message
+        :param gameId: optional game id
+        :param playerId: optional player id
+        """
         msg = pokerth_pb2.ChatRequestMessage()
         msg.chatText = text
         if gameId is not None:
@@ -223,35 +244,29 @@ class ClientProtocol(PokerTHProtocol):
         self._sendMessage(msg)
         log.msg("ChatRequestMessage sent")
 
-    def handleChat(self, chatType, text, gameId=None, playerId=None):
+    def handleChat(self, chatType, text, lobbyInfo, gameInfo=None,
+                   playerInfo=None):
         """
         Handle the behavior of our client when a chat message was received.
 
         Overwrite this method.
 
-        :param chatType:
-        :param text:
-        :param gameId:
-        :param playerId:
-        :return:
+        :param chatType: "Lobby", "Game", "Bot", "Broadcast" or "Private"
+        :param text: text of the message
+        :param lobbyInfo: lobby information (:obj:`~.Lobby`)
+        :param gameInfo: optional game information (:obj:`~.Game`)
+        :param playerInfo: optional player information (:obj:`~.Player`)
         """
-        type = chatType.replace('chatType', '')
         log_str = ''
-        if gameId is not None:
-            game = self.factory.lobby.getGameInfo(gameId)
+        if game is not None:
             log_str += '<{game}> '
-        else:
-            game = None
-        if playerId is not None:
-            player = self.factory.lobby.getPlayer(playerId).name
+        if playerInfo is not None:
             log_str += '{player} '
-        else:
-            player = None
         log_str += '[{type}]: {text}'
-        log.msg(log_str.format(game=game, player=player, type=type, text=text))
+        log.msg(log_str.format(game=gameInfo.name, player=playerInfo.name,
+                               type=chatType, text=text))
 
     def gameStartInitialReceived(self, msg):
-        log.msg("GameStartInitialMessage received")
         game = self.factory.game
         assert game.gameId == msg.gameId
         game.dealer = game.getPlayer(msg.startDealerPlayerId)
@@ -260,7 +275,6 @@ class ClientProtocol(PokerTHProtocol):
             player.seat = seat
 
     def handStartReceived(self, msg):
-        log.msg("HandStartMessage received")
         game = self.factory.game
         assert game.gameId == msg.gameId
         game.startNewHand()
@@ -271,7 +285,6 @@ class ClientProtocol(PokerTHProtocol):
         log.msg("Got cards {}".format(game.pocketCards))
 
     def playersActionDoneReceived(self, msg):
-        log.msg("PlayersActionDoneMessage received")
         game = self.factory.game
         assert game.gameId == msg.gameId
         round = msg.gameState
@@ -284,7 +297,6 @@ class ClientProtocol(PokerTHProtocol):
         player.money = msg.playerMoney
 
     def playersTurnReceived(self, msg):
-        log.msg("PlayersTurnMessage received")
         game = self.factory.game
         assert game.gameId == msg.gameId
         # First real turn of a player triggers Preflop
@@ -293,7 +305,8 @@ class ClientProtocol(PokerTHProtocol):
         if msg.playerId == self.factory.playerId:
             self.handleMyTurn(game)
         else:
-            self.handleOthersTurn(msg.playerId, game)
+            player = self.factory.lobby.getPlayer(msg.playerId)
+            self.handleOthersTurn(player, game)
 
     def sendMyAction(self, action, bet, relative=True):
         """
@@ -315,24 +328,26 @@ class ClientProtocol(PokerTHProtocol):
         self._sendMessage(msg)
 
     def yourActionRejected(self, msg):
-        log.msg("YourActionRejectedMessage received")
         raise RuntimeError("Wrong action taken:\n{}".format(msg))
 
-    def handleOthersTurn(self, playerId, game):
-        player = game.getPlayer(playerId)
-        log.msg("Turn of player {}".format(player.name))
+    def handleOthersTurn(self, playerInfo, gameInfo):
+        """
+        Handle the start of another player's turn.
 
-    def handleMyTurn(self, game):
+        :param playerInfo: player information (:obj:`~.Player`)
+        :param gameInfo: game information (:obj:`~.Game`)
+        """
+        log.msg("Turn of player {}".format(playerInfo.name))
+
+    def handleMyTurn(self, gameInfo):
         """
         Decide what action to take when it is our turn.
 
-        :param game: game information (:obj:`game.Game`)
-        :return: (action, bet) tuple (:obj:`poker.Action`, :obj:`int`)
+        :param gameInfo: game information (:obj:`~.Game`)
         """
         raise NotImplementedError("What action should I take?")
 
     def dealFlopCardsReceived(self, msg):
-        log.msg("DealFlopCardsMessage received")
         game = self.factory.game
         assert game.gameId == msg.gameId
         assert game.currRound == poker.Round.PREFLOP
@@ -343,7 +358,6 @@ class ClientProtocol(PokerTHProtocol):
         game.highestSet = 0
 
     def dealTurnCardReceived(self, msg):
-        log.msg("DealTurnCardsMessage received")
         game = self.factory.game
         assert game.gameId == msg.gameId
         assert game.currRound == poker.Round.FLOP
@@ -352,7 +366,6 @@ class ClientProtocol(PokerTHProtocol):
         game.highestSet = 0
 
     def dealRiverCardReceived(self, msg):
-        log.msg("DealRiverCardsMessage received")
         game = self.factory.game
         assert game.gameId == msg.gameId
         assert game.currRound == poker.Round.TURN
@@ -377,3 +390,14 @@ class ClientProtocolFactory(ClientFactory):
 
     def clientConnectionFailed(self, connector, reason):
         reactor.stop()
+
+
+def enum2str(enumType, enum):
+    """
+    Translates a pokerth_pb2 enum type to a string.
+
+    :param enumType: enum type class
+    :param enum: the enum element of the type
+    :return: identifier string of enum
+    """
+    return [k for k, v in enumType.items() if v == enum][0]

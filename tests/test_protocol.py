@@ -14,6 +14,7 @@ from .fixtures import pokerth_server
 
 from pokerthproto import protocol
 from pokerthproto import lobby
+from pokerthproto import pokerth_pb2
 
 __author__ = 'Florian Wilhelm'
 __copyright__ = 'Florian Wilhelm'
@@ -24,7 +25,7 @@ log.startLogging(sys.stdout)
 def test_lobby(pokerth_server):
     class PyClientProtocol(protocol.ClientProtocol):
 
-        def handleInsideLobby(self):
+        def handleInsideLobby(self, lobbyInfo):
             pass
 
     class PyClientProtocolFactory(protocol.ClientProtocolFactory):
@@ -47,7 +48,7 @@ def test_lobby(pokerth_server):
 def test_players(pokerth_server):
     class PyClientProtocol(protocol.ClientProtocol):
 
-        def handleInsideLobby(self):
+        def handleInsideLobby(self, lobbyInfo):
             pass
 
     class PyClientProtocolFactory(protocol.ClientProtocolFactory):
@@ -70,7 +71,7 @@ def test_players(pokerth_server):
 def test_create_game(pokerth_server):
     class PyClientProtocol(protocol.ClientProtocol):
 
-        def handleInsideLobby(self):
+        def handleInsideLobby(self, lobbyInfo):
             gameInfo = lobby.GameInfo('PyClient Game')
             self.sendJoinNewGame(gameInfo)
 
@@ -94,17 +95,17 @@ def test_create_game(pokerth_server):
 def test_two_players_in_lobby(pokerth_server):
     class PyClient1Protocol(protocol.ClientProtocol):
 
-        def handleInsideLobby(self):
+        def handleInsideLobby(self, lobbyInfo):
             try:
                 gameId = self.factory.lobby.getGameInfoId('PyClient Game')
             except lobby.LobbyError:
-                reactor.callLater(1, self.handleInsideLobby)
+                reactor.callLater(1, self.handleInsideLobby, lobbyInfo)
             else:
                 self.sendJoinExistingGame(gameId)
 
     class PyClient2Protocol(protocol.ClientProtocol):
 
-        def handleInsideLobby(self):
+        def handleInsideLobby(self, lobbyInfo):
             gameInfo = lobby.GameInfo('PyClient Game')
             self.sendJoinNewGame(gameInfo)
 
@@ -130,3 +131,9 @@ def test_two_players_in_lobby(pokerth_server):
 
     d.addCallback(lambda proto: task.deferLater(reactor, 7, start_2nd_client))
     return d
+
+
+def test_enum2str():
+    chatType = pokerth_pb2.ChatMessage.ChatType
+    for k, v in chatType.items():
+        assert k == protocol.enum2str(chatType, v)

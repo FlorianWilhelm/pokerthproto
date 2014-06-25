@@ -16,12 +16,14 @@ Implemented
 * GameListNewMessage
 * GameListUpdateMessage
 * GameListPlayerJoinedMessage
+* GameListPlayerLeftMessage
 * PlayerInfoRequestMessage
 * PlayerInfoReplyMessage
 * JoinExistingGameMessage
 * JoinNewGameMessage
 * JoinGameAckMessage
 * GamePlayerJoinedMessage
+* GamePlayerLeftMessage
 * StartEventMessage
 * StartEventAckMessage
 * GameStartInitialMessage
@@ -48,12 +50,10 @@ Not Implemented
 * AvatarDataMessage
 * AvatarEndMessage
 * UnknownAvatarMessage
-* GameListPlayerLeftMessage (SOON)
 * GameListAdminChangedMessage
 * SubscriptionRequestMessage
 * RejoinExistingGameMessage
 * JoinGameFailedMessage
-* GamePlayerLeftMessage (SOON)
 * GameAdminChangedMessage
 * RemovedFromGameMessage
 * KickPlayerRequestMessage
