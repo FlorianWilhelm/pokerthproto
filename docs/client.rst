@@ -1,6 +1,6 @@
-=================
-Writting a Client
-=================
+================
+Writing a Client
+================
 
 PokerTHProto is built with `Twisted <https://twistedmatrix.com/>`__, an
 event-driven networking engine engine written in Python. That means it is rather
@@ -52,7 +52,7 @@ This basic ``my_client.tac`` file gives you an idea::
     service.setServiceParent(application)
 
 Here, we create an own protocol by inhereting from ``ClientProtocol`` and
-overwritting some methods in order to adapt them to our needs. For instance,
+overwriting some methods in order to adapt them to our needs. For instance,
 the ``handleInsideLobby`` method is triggered when we are inside the lobby.
 In this case, our action is to join the game named *My Online Game* if available
 otherwise we wait one second and try again. The method ``handleMyTurn`` is called

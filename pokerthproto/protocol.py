@@ -238,9 +238,9 @@ class ClientProtocol(PokerTHProtocol):
         msg = pokerth_pb2.ChatRequestMessage()
         msg.chatText = text
         if gameId is not None:
-            msg.gameId = gameId
+            msg.targetGameId = gameId
         if playerId is not None:
-            msg.playerId = gameId
+            msg.targetPlayerId = playerId
         self._sendMessage(msg)
         log.msg("ChatRequestMessage sent")
 
@@ -258,12 +258,14 @@ class ClientProtocol(PokerTHProtocol):
         :param playerInfo: optional player information (:obj:`~.Player`)
         """
         log_str = ''
-        if game is not None:
+        if gameInfo is not None:
             log_str += '<{game}> '
+            gameInfo = lobbyInfo.getGameInfo(gameInfo.gameId).gameName
         if playerInfo is not None:
             log_str += '{player} '
+            playerInfo = playerInfo.name
         log_str += '[{type}]: {text}'
-        log.msg(log_str.format(game=gameInfo.name, player=playerInfo.name,
+        log.msg(log_str.format(game=gameInfo, player=playerInfo,
                                type=chatType, text=text))
 
     def gameStartInitialReceived(self, msg):
