@@ -1,4 +1,7 @@
 # -*- coding: utf-8 -*-
+"""
+All functionality related to a poker game and its representation.
+"""
 
 from __future__ import print_function, absolute_import, division
 
@@ -269,7 +272,7 @@ class Game(object):
 
         :param playerId: id of player
         :param kind: type of the action of :class:`Action`
-        :param money: stake of the action if availPlayerIdable
+        :param money: stake of the action if available
         """
         if not self.existPlayer(playerId):
             raise GameError("Adding an action of player wiht id {} that "
@@ -285,7 +288,7 @@ class Game(object):
 
         :param playerId: id of the player or :obj:`None` for all players
         :param rounds: list of rounds (:class:`Round`) to consider
-        :return: found actions :class:`Actioninfo`
+        :return: list of actions (:class:`Actioninfo`)
         """
         if rounds is not None:
             rounds = [poker_rounds.index(round) for round in rounds]

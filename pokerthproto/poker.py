@@ -1,4 +1,7 @@
 # -*- coding: utf-8 -*-
+"""
+All data structures related to poker like poker actions, cards, rounds etc.
+"""
 
 from __future__ import print_function, absolute_import, division
 
@@ -31,7 +34,7 @@ class Action(object):
 
 class Round(object):
     """
-    Enum of poker rounds where posting blinds is considered a round too
+    Enum of poker rounds where posting blinds is considered a round too.
     """
     SMALL_BLIND = pokerth_pb2.netStatePreflopSmallBlind
     BIG_BLIND = pokerth_pb2.netStatePreflopBigBlind
@@ -41,15 +44,28 @@ class Round(object):
     RIVER = pokerth_pb2.netStateRiver
 
 
+# Order of poker rounds
 poker_rounds = [Round.SMALL_BLIND, Round.BIG_BLIND, Round.PREFLOP, Round.FLOP,
                 Round.TURN, Round.RIVER]
 
 
 def cardToInt(card):
+    """
+    Converts a poker card into an integer representation.
+
+    :param card: poker card like 2d, Th, Qc etc.
+    :return: integer
+    """
     assert len(card) == 2
     return 13*suits.index(card[1]) + ranks.index(card[0])
 
 
 def intToCard(i):
+    """
+    Converts an integer into a poker card
+
+    :param i: integer
+    :return: poker card like 2d, Th, Qc etc.
+    """
     assert 0 <= i <= 51
     return ranks[i % 13] + suits[i // 13]

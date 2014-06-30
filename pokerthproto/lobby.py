@@ -1,4 +1,8 @@
 # -*- coding: utf-8 -*-
+"""
+All functionality related to the lobby where information about running games,
+players etc. is presented.
+"""
 
 from __future__ import print_function, absolute_import, division
 

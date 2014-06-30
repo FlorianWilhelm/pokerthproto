@@ -1,4 +1,8 @@
 # -*- coding: utf-8 -*-
+"""
+The low-level transport functionality for packing/unpacking and enveloping/
+developing messages.
+"""
 
 from __future__ import print_function, absolute_import, division
 

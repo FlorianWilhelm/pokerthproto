@@ -1,4 +1,7 @@
 # -*- coding: utf-8 -*-
+"""
+A PokerTH proxy that logs all messages between a PokerTH client and server.
+"""
 
 from __future__ import print_function, absolute_import, division
 

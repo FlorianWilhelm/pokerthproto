@@ -1,4 +1,7 @@
 # -*- coding: utf-8 -*-
+"""
+All functionality related to the representation of a poker player.
+"""
 
 from __future__ import print_function, absolute_import, division
 
@@ -18,6 +21,7 @@ class Player(object):
         self._seat = None
         self._isHuman = None
         self._playerRights = None
+        self._countryCode = None
         self._avatarType = None
         self._avatarHash = None
 
@@ -46,6 +50,10 @@ class Player(object):
         self._seat = seat
 
     @property
+    def countryCode(self):
+        return self._countryCode
+
+    @property
     def isHuman(self):
         return self._isHuman
 
@@ -65,6 +73,7 @@ class Player(object):
         self._name = infoData.playerName
         self._isHuman = infoData.isHuman
         self._playerRights = infoData.playerRights
+        self._countryCode = infoData.countryCode
         self._avatarType = infoData.avatarData.avatarType
         self._avatarHash = infoData.avatarData.avatarHash
 

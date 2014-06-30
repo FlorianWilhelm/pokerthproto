@@ -1,11 +1,9 @@
 # -*- coding: utf-8 -*-
-
+"""
+The PokerTH protocol consisting of messages and replies with respect to the
+current state in the communication.
+"""
 from __future__ import print_function, absolute_import, division
-
-__author__ = 'Florian Wilhelm'
-__copyright__ = 'Florian Wilhelm'
-
-import logging
 
 from twisted.internet import reactor
 from twisted.python import log
@@ -16,6 +14,9 @@ from . import transport
 from . import lobby
 from . import game
 from . import poker
+
+__author__ = 'Florian Wilhelm'
+__copyright__ = 'Florian Wilhelm'
 
 
 class PokerTHProtocol(Protocol):
