@@ -58,6 +58,7 @@ class PokerTHProtocol(Protocol):
             msg = transport.develop(transport.unpack(buffer))
             msg_name = msg.__class__.__name__
             hook = self._getHook(msg_name)
+            #log.msg("Data: {}".format(buffer.encode('hex')))
             log.msg("{} received".format(msg_name))
             #log.msg(msg, logLevel=logging.DEBUG)
             getattr(self, hook)(msg)

@@ -35,6 +35,7 @@ class ProxyProtocol(protocol.PokerTHProtocol):
     def dataReceived(self, data):
         for buffer in self._getBufferedData(data):
             msg = transport.develop(transport.unpack(buffer))
+            log.msg("Data: {}".format(buffer.encode('hex')))
             log.msg("{} from client:\n{}".format(msg.__class__.__name__, msg))
         self.client_proto.transport.write(data)
 
@@ -48,6 +49,7 @@ class ClientProtocol(protocol.PokerTHProtocol):
     def dataReceived(self, data):
         for buffer in self._getBufferedData(data):
             msg = transport.develop(transport.unpack(buffer))
+            log.msg("Data: {}".format(buffer.encode('hex')))
             log.msg("{} from server:\n{}".format(msg.__class__.__name__, msg))
         self.factory.sendToClient(data)
 

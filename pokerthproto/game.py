@@ -15,8 +15,8 @@ class ActionInfo(object):
     """
     The action of a player during the poker game.
 
-    :param player: player (:class:`Player`)
-    :param kind: type of the action (:class:`Action`)
+    :param player: player (:obj:`~.Player`)
+    :param kind: type of the action (:obj:`~.Action`)
     :param money: stake of the action if available
     """
 
@@ -44,8 +44,8 @@ class RoundInfo(object):
     """
     Information about the poker round.
 
-    :param gameState: name of the poker round (:class:`Round`)
-    :param cards: board card of the round as defined in :data:`deck`
+    :param gameState: name of the poker round (:obj:`~.Round`)
+    :param cards: board card of the round as defined in :obj:`~.deck`
     """
 
     def __init__(self, gameState, cards=None):
@@ -189,7 +189,7 @@ class Game(object):
         """
         Retrieves a player from the game
 
-        :param name: id of the player
+        :param id: id of the player
         :return: player
         """
         player = [p for p in self._players if p.playerId == id]
@@ -211,7 +211,7 @@ class Game(object):
         """
         Checks if the poker round exists in this game
 
-        :param name: poker round of :class:`Round`
+        :param name: poker round of :obj:`~.Round`
         :return: test if round exists
         """
         position = poker_rounds.index(name)
@@ -224,7 +224,7 @@ class Game(object):
         """
         Adds a poker round to the game
 
-        :param name: poker round of type :class:`Round`
+        :param name: poker round of type :obj:`~.Round`
         :param cards: board cards of the round
         """
         position = poker_rounds.index(name)
@@ -242,7 +242,7 @@ class Game(object):
         Current poker round
 
         :return: poker round
-        :rtype: :class:`Roundinfo`
+        :rtype: :obj:`~.RoundInfo`
         """
         if self._rounds:
             return self._rounds[-1]
@@ -257,7 +257,7 @@ class Game(object):
         """
         Checks if a player exists in the game
 
-        :param name: id of the player
+        :param id: id of the player
         :return: test if player exists
         """
         try:
@@ -271,7 +271,7 @@ class Game(object):
         Adds an action to the current round of the game
 
         :param playerId: id of player
-        :param kind: type of the action of :class:`Action`
+        :param kind: type of the action of :obj:`~.Action`
         :param money: stake of the action if available
         """
         if not self.existPlayer(playerId):
@@ -287,8 +287,8 @@ class Game(object):
         and a player.
 
         :param playerId: id of the player or :obj:`None` for all players
-        :param rounds: list of rounds (:class:`Round`) to consider
-        :return: list of actions (:class:`Actioninfo`)
+        :param rounds: list of rounds (:obj:`~.Round`) to consider
+        :return: list of actions (:obj:`~.Actioninfo`)
         """
         if rounds is not None:
             rounds = [poker_rounds.index(round) for round in rounds]
