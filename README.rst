@@ -6,6 +6,9 @@ PokerTHProto
     :target: https://travis-ci.org/FlorianWilhelm/pokerthproto
 .. image:: https://coveralls.io/repos/FlorianWilhelm/pokerthproto/badge.png?branch=master
     :target: https://coveralls.io/r/FlorianWilhelm/pokerthproto?branch=master
+.. image:: https://requires.io/github/FlorianWilhelm/pokerthproto/requirements.png?branch=master
+    :target: https://requires.io/github/FlorianWilhelm/pokerthproto/requirements/?branch=master
+    :alt: Requirements Status
 
 The goal of this project is to provide a client interface to a
 `PokerTH <http://pokerth.net/>`__ server. This interface could then be used
