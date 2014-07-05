@@ -23,7 +23,7 @@ class Action(object):
     """
     Enum of possible player actions in poker
     """
-    NONE = pokerth_pb2.netActionNone
+    NONE = pokerth_pb2.netActionNone  # for posting blinds
     FOLD = pokerth_pb2.netActionFold
     CHECK = pokerth_pb2.netActionCheck
     CALL = pokerth_pb2.netActionCall

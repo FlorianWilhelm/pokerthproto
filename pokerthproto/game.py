@@ -64,7 +64,7 @@ class RoundInfo(object):
 
     @property
     def name(self):
-        for attr, value in vars(Round):
+        for attr, value in vars(Round).items():
             if attr.startswith("__"):
                 continue
             if value == self._gameState:
@@ -306,6 +306,9 @@ class Game(object):
     def myBet(self):
         if self.currRound == Round.PREFLOP:
             rounds = poker_rounds[:3]
+        elif self.currRound == Round.SMALL_BLIND \
+                or self.currRound == Round.BIG_BLIND:
+            raise GameError("myBet cannot be called while posting blinds.")
         else:
             rounds = [self.currRound]
         myActions = self.getActions(self._myPlayerId, rounds=rounds)
