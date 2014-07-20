@@ -37,6 +37,12 @@ Implemented
 * DealRiverCardMessage
 * ChatMessage
 * ChatRequestMessage
+* AllInShowCardsMessage
+* EndOfHandShowCardsMessage
+* EndOfHandHideCardsMessage
+* ShowMyCardsRequestMessage
+* AfterHandShowCardsMessage
+* EndOfGameMessage
 
 
 Not Implemented
@@ -63,12 +69,6 @@ Not Implemented
 * RejectGameInvitationMessage
 * RejectInvNotifyMessage
 * GameStartRejoinMessage
-* AllInShowCardsMessage (SOON)
-* EndOfHandShowCardsMessage (SOON)
-* EndOfHandHideCardsMessage (SOON)
-* ShowMyCardsRequestMessage (SOON)
-* AfterHandShowCardsMessage (SOON)
-* EndOfGameMessage (SOON)
 * PlayerIdChangedMessage (SOON)
 * AskKickPlayerMessage
 * AskKickDeniedMessage

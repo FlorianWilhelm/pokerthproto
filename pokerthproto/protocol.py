@@ -377,6 +377,75 @@ class ClientProtocol(PokerTHProtocol):
         game.addRound(poker.Round.RIVER, cards=[card])
         game.highestSet = 0
 
+    def allInShowCardsReceived(self, msg):
+        game = self.factory.game
+        assert game.gameId == msg.gameId
+        for playerAllin in msg.playersAllIn:
+            card1 = poker.intToCard(playerAllin.allInCard1)
+            card2 = poker.intToCard(playerAllin.allInCard2)
+            game.addOthersCards(playerAllin.playerId, [card1, card2])
+
+    def _recordResult(self, result):
+        game = self.factory.game
+        game.addWin(result.playerId, result.moneyWon)
+        card1 = poker.intToCard(result.resultCard1)
+        card2 = poker.intToCard(result.resultCard2)
+        game.addOthersCards(result.playerId, [card1, card2])
+        player = game.getPlayer(result.playerId)
+        player.money = result.playerMoney
+
+    def endOfHandShowCardsReceived(self, msg):
+        game = self.factory.game
+        assert game.gameId == msg.gameId
+        for result in msg.playerResults:
+            self._recordResult(result)
+        self.handleEndOfHand(game)
+
+    def endOfHandHideCardsReceived(self, msg):
+        game = self.factory.game
+        assert game.gameId == msg.gameId
+        game.addWin(msg.playerId, msg.moneyWon)
+        player = game.getPlayer(msg.playerId)
+        player.money = msg.playerMoney
+        self.handleEndOfHand(game)
+
+    def showMyCardsRequestReceived(self, msg):
+        pass  # empty message
+
+    def afterHandShowCardsReceived(self, msg):
+        game = self.factory.game
+        assert game.gameId == msg.gameId
+        self._recordResult(msg.playerResult)
+        self.handleEndOfHand(game)
+
+    def handleEndOfHand(self, gameInfo):
+        """
+        Handle the end of a hand
+
+        :param gameInfo: game information (:obj:`~.Game`)
+        """
+        log.msg("End of hand {}".format(gameInfo.handNum))
+
+    def endOfGameReceived(self, msg):
+        game = self.factory.game
+        assert game.gameId == msg.gameId
+        winner = game.getPlayer(msg.winnerPlayerId)
+        self.state = States.GAME_JOINED
+        reactor.callLater(1, self.handleEndOfGame, game, winner)
+
+    def handleEndOfGame(self, gameInfo, winner):
+        """
+        Handle the end of a game
+
+        The end of a game brings you back to the lobby
+
+        :param gameInfo: game information (:obj:`~.Game`)
+        :param winner: winner of the game (:obj:`~.Player`)
+        """
+        log.msg("End of game {}\n"
+                "Winner: {}".format(gameInfo.handNum,
+                                    winner.name))
+
 
 class ClientProtocolFactory(ClientFactory):
     protocol = ClientProtocol

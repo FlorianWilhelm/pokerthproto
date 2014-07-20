@@ -114,6 +114,22 @@ class Game(object):
         self._highestSet = 0
         self._minimumRaise = 0
         self._handNum = 1
+        self._wins = {}
+        self._othersCards = {}
+
+    @property
+    def wins(self):
+        return self._wins
+
+    def addWin(self, playerId, money):
+        self._wins[playerId] = money
+
+    @property
+    def othersCards(self):
+        return self._othersCards
+
+    def addOthersCards(self, playerId, cards):
+        self._othersCards[playerId] = cards
 
     @property
     def seats(self):
@@ -274,7 +290,7 @@ class Game(object):
         :param kind: type of the action of :obj:`~.Action`
         :param money: stake of the action if available
         """
-        if not self.existPlayer(playerId):
+        if not self.existPlayer(playerId) and not kind == Action.FOLD:
             raise GameError("Adding an action of player wiht id {} that "
                             "is not in game.".format(playerId))
         player = self.getPlayer(playerId)
@@ -323,3 +339,5 @@ class Game(object):
             dealer_seat = (self.dealer.seat + 1) % len(self.seats)
             self.dealer = [p for p in self.players if p.seat == dealer_seat][0]
         self._handNum += 1
+        self._wins = {}
+        self._othersCards = {}

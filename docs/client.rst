@@ -89,3 +89,15 @@ Optional Methods
 
 * :obj:`~.handleOthersTurn`: This method is called when another player starts
   its turn. You could use this event to chat him up.
+
+* :obj:`~.handleEndOfHand`: This method is called when one hand is over. Use
+  the ``gameInfo`` parameter of type :obj:`~.Game` to do logging or learn about
+  the other players' cards and wins with ``gameInfo.othersCards`` and
+  ``gameInfo.wins``.
+
+* :obj:`~.handleEndOfGame`: This method is called when a game is over. Use
+  the ``gameInfo`` parameter of type :obj:`~.Game` to do logging or learn about
+  the other players' cards and wins with ``gameInfo.othersCards`` and
+  ``gameInfo.wins``. The parameter ``winner`` of type :obj:`~.Player` provides
+  you the winner of the game. When this function is called you are back in the
+  lobby.
